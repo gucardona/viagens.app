@@ -1,6 +1,6 @@
 # Etapa 1: base do app de viagens (design)
 
-Status: aguardando revisão do Gustavo
+Status: aprovado pelo Gustavo em 12/10
 Plano geral do produto: `docs/plano-app-viagens.md` (escopo V1 em 3 etapas). Este spec cobre só a **etapa 1**. As etapas 2 (lugares salvos, importação do Google, agrupamento por proximidade) e 3 (gastos, checklist, offline) terão specs próprios.
 
 ## Objetivo
