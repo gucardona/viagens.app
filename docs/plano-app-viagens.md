@@ -2,6 +2,8 @@
 
 App web privado para vocês dois, que funciona bem no celular (instalável como app pela tela inicial) e no computador.
 
+> **Atualização (12/10):** sem nenhuma API paga do Google. Busca e importação usam OpenStreetMap (Nominatim/Photon); lugares com estrela do Takeout entram com coordenadas; listas salvas são procuradas pelo nome e as não encontradas são marcadas no mapa; links compartilhados do Google Maps têm as coordenadas lidas do próprio link.
+
 ## 1. Escopo da primeira versão (V1)
 
 **Viagens**

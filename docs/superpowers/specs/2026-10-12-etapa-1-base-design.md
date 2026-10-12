@@ -21,7 +21,7 @@ Assumido (corrija se estiver errado):
 ## Fora da etapa 1 (de propósito)
 
 - Importação do Google Maps, lugares salvos e agrupamento por proximidade (etapa 2).
-- Busca de lugares pelo Google Places (etapa 2, junto da importação). Na etapa 1 a busca de endereço usa OpenStreetMap.
+- Nenhuma API paga do Google, em nenhuma etapa (decisão do Gustavo). Busca de endereço usa OpenStreetMap (Nominatim).
 - Gastos, divisão, checklist, modo offline (etapa 3).
 - Atualização em tempo real. Na etapa 1, a tela recarrega os dados ao voltar para o app (refetch on focus). Para duas pessoas isso basta; se incomodar, entra SSE depois.
 - Cadastro pela tela. As duas contas são criadas por um comando na VPS.
@@ -142,6 +142,6 @@ Telas:
 
 ## Riscos e limites conhecidos
 
-- Nominatim é pior que o Google para achar restaurantes e lojas; o toque no mapa cobre os casos que ele não acha até a etapa 2.
+- Nominatim é pior que o Google para achar restaurantes e lojas; o toque no mapa cobre os casos que ele não acha.
 - Sem tempo real: se os dois editarem o mesmo item ao mesmo tempo, vale a última gravação.
 - Um processo só (limite de login em memória, SQLite). Para dois usuários isso é o certo; não escala para muitos, e não precisa.
