@@ -11,28 +11,33 @@ type Props = {
   line?: boolean
   onSelect?: (item: Item) => void
   onPick?: (p: { lat: number; lng: number }) => void
+  numbers?: Map<number, number>
+  geolocate?: boolean
+  interactive?: boolean
   className?: string
 }
 
-function pin(item: Item, onSelect?: (item: Item) => void) {
+function pin(item: Item, n?: number, onSelect?: (item: Item) => void) {
   const el = document.createElement('button')
   el.type = 'button'
   el.setAttribute('aria-label', item.title)
-  el.textContent = KINDS[item.kind].emoji
-  el.style.cssText = `width:34px;height:34px;border-radius:50%;border:3px solid white;background:${KINDS[item.kind].color};font-size:16px;box-shadow:0 1px 4px rgba(18,53,91,.4);cursor:pointer`
+  el.textContent = n ? String(n) : KINDS[item.kind].emoji
+  const size = n ? 26 : 34
+  el.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;border:${n ? 2 : 3}px solid white;background:${KINDS[item.kind].color};color:white;font:700 ${n ? 14 : 16}px var(--font-board);box-shadow:0 1px 4px rgba(18,53,91,.4);cursor:pointer`
   if (onSelect) el.addEventListener('click', (e) => (e.stopPropagation(), onSelect(item)))
   return el
 }
 
-export default function TripMap({ items, line, onSelect, onPick, className = 'h-72' }: Props) {
+export default function TripMap({ items, line, onSelect, onPick, numbers, geolocate, interactive = true, className = 'h-72' }: Props) {
   const box = useRef<HTMLDivElement>(null)
   const map = useRef<maplibregl.Map>()
   const pickRef = useRef(onPick)
   pickRef.current = onPick
 
   useEffect(() => {
-    const m = new maplibregl.Map({ container: box.current!, style: STYLE, center: [-30, 20], zoom: 1.5, attributionControl: { compact: true } })
-    m.addControl(new maplibregl.NavigationControl({ showCompass: false }))
+    const m = new maplibregl.Map({ container: box.current!, style: STYLE, center: [-30, 20], zoom: 1.5, attributionControl: { compact: true }, interactive })
+    if (interactive) m.addControl(new maplibregl.NavigationControl({ showCompass: false }))
+    if (geolocate) m.addControl(new maplibregl.GeolocateControl({ trackUserLocation: false }))
     m.on('click', (e) => pickRef.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng }))
     map.current = m
     return () => m.remove()
@@ -41,7 +46,7 @@ export default function TripMap({ items, line, onSelect, onPick, className = 'h-
   useEffect(() => {
     const m = map.current!
     const pinned = items.filter((i) => i.lat != null && i.lng != null)
-    const markers = pinned.map((i) => new maplibregl.Marker({ element: pin(i, onSelect) }).setLngLat([i.lng!, i.lat!]).addTo(m))
+    const markers = pinned.map((i) => new maplibregl.Marker({ element: pin(i, numbers?.get(i.id), onSelect) }).setLngLat([i.lng!, i.lat!]).addTo(m))
     const coords = pinned.map((i) => [i.lng!, i.lat!] as [number, number])
 
     const drawLine = () => {
@@ -60,7 +65,7 @@ export default function TripMap({ items, line, onSelect, onPick, className = 'h-
       m.fitBounds(b, { padding: 48, maxZoom: 15, duration: 0 })
     }
     return () => markers.forEach((mk) => mk.remove())
-  }, [items, line, onSelect])
+  }, [items, line, onSelect, numbers])
 
   return <div ref={box} className={`w-full overflow-hidden rounded-lg ${className}`} />
 }

@@ -1,6 +1,6 @@
 # Etapas 2 e 3: roteiro completo, mapa, lugares salvos e o que tem por perto (design)
 
-Status: aguardando aprovação do Gustavo
+Status: aprovado pelo Gustavo em 13/10
 Plano geral: `docs/plano-app-viagens.md`. Base: etapa 1 (`2026-10-12-etapa-1-base-design.md`), já no ar.
 
 ## O que o Gustavo pediu (13/10)
