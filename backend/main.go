@@ -47,6 +47,8 @@ func run(args []string) error {
 		}
 		fmt.Fprintln(os.Stderr, "Usuário criado.")
 		return nil
+	case cmd == "backup" && len(args) == 2:
+		return backup(app.db, args[1])
 	}
-	return fmt.Errorf("uso: viagens [serve | adduser <email> <nome>]")
+	return fmt.Errorf("uso: viagens [serve | adduser <email> <nome> | backup <arquivo>]")
 }

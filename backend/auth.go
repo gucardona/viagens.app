@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -63,6 +64,10 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("POST /api/trips/{id}/attachments", a.auth(a.handleUpload))
 	mux.HandleFunc("GET /api/attachments/{id}", a.auth(a.handleDownload))
 	mux.HandleFunc("DELETE /api/attachments/{id}", a.auth(a.handleDeleteAttachment))
+	mux.HandleFunc("GET /api/geocode", a.auth(a.handleGeocode))
+	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) { writeError(w, 404, "Não encontrado") })
+	dist, _ := fs.Sub(webFS, "web/dist")
+	mux.Handle("/", spaHandler(dist))
 	return csrf(mux)
 }
 
