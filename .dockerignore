@@ -1,0 +1,5 @@
+.git
+.superpowers
+frontend/node_modules
+backend/web/dist/assets
+deploy/data

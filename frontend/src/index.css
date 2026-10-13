@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #12355B;
+  --color-sea: #EEF3F1;
+  --color-paper: #FFFFFF;
+  --color-signal: #F2C14E;
+  --color-text: #1F2A37;
+  --color-muted: #5B6B7A;
+  --color-line: #D5DFDB;
+  --font-sans: "Barlow", system-ui, sans-serif;
+  --font-board: "Barlow Condensed", "Arial Narrow", sans-serif;
+}
+
+body {
+  background: var(--color-sea);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-signal);
+  outline-offset: 2px;
+}
+
+.board { font-family: var(--font-board); font-variant-numeric: tabular-nums; }
+
+.field {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--color-line);
+  border-radius: 0.5rem;
+  background: var(--color-paper);
+  padding: 0.6rem 0.75rem;
+  font-size: 1rem;
+}
+
+.btn {
+  border-radius: 0.5rem;
+  padding: 0.65rem 1rem;
+  font-weight: 600;
+  background: var(--color-ink);
+  color: white;
+}
+.btn:disabled { opacity: 0.5; }
+.btn-quiet { background: transparent; color: var(--color-ink); border: 1px solid var(--color-line); }
+.btn-danger { background: transparent; color: #B42318; }
