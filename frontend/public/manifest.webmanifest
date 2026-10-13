@@ -1,0 +1,9 @@
+{
+  "name": "Viagens",
+  "short_name": "Viagens",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#EEF3F1",
+  "theme_color": "#12355B",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
