@@ -1,0 +1,188 @@
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { api, json } from '../api'
+import { KINDS } from '../kinds'
+import { mapLinks } from '../links'
+import TripMap from '../components/TripMap'
+import type { Attachment, Item, Kind, TripDetail } from '../types'
+
+type Form = Omit<Item, 'id' | 'trip_id' | 'created_at' | 'updated_at'>
+type GeoResult = { label: string; lat: number; lng: number }
+
+const empty: Form = {
+  kind: 'activity', title: '', start_date: '', start_time: '', end_date: '', end_time: '',
+  address: '', lat: null, lng: null, confirmation_code: '', notes: '',
+}
+
+export default function ItemSheet() {
+  const { id = '', itemId = 'novo' } = useParams()
+  const isNew = itemId === 'novo'
+  const nav = useNavigate()
+  const qc = useQueryClient()
+  const { data } = useQuery({ queryKey: ['trip', id], queryFn: () => api<TripDetail>(`/api/trips/${id}`) })
+  const item = data?.items.find((i) => String(i.id) === itemId)
+  const files = data?.attachments.filter((a) => String(a.item_id) === itemId) ?? []
+
+  const [form, setForm] = useState<Form>(empty)
+  const [error, setError] = useState('')
+  const [results, setResults] = useState<GeoResult[]>([])
+  const [searching, setSearching] = useState(false)
+  const [uploading, setUploading] = useState(false)
+
+  useEffect(() => {
+    if (item) {
+      const { id: _i, trip_id: _t, created_at: _c, updated_at: _u, ...rest } = item
+      setForm(rest)
+    } else if (isNew && data) setForm((f) => ({ ...f, start_date: f.start_date || data.trip.start_date }))
+  }, [item, isNew, data])
+
+  const set = (k: keyof Form) => (e: { target: { value: string } }) => setForm({ ...form, [k]: e.target.value })
+  const pinItems = useMemo(() => (form.lat != null ? [{ ...empty, ...form, id: 0, trip_id: 0 } as Item] : []), [form])
+  const links = mapLinks(form)
+  const refresh = () => qc.invalidateQueries({ queryKey: ['trip', id] })
+
+  async function search() {
+    if (!form.address.trim()) return
+    setSearching(true)
+    setError('')
+    try {
+      const r = await api<GeoResult[]>(`/api/geocode?q=${encodeURIComponent(form.address)}`)
+      setResults(r)
+      if (!r.length) setError('Nenhum lugar encontrado. Toque no mapa para marcar o ponto.')
+    } catch (err) {
+      setError(`${(err as Error).message}. Toque no mapa para marcar o ponto.`)
+    } finally {
+      setSearching(false)
+    }
+  }
+
+  async function submit(e: FormEvent) {
+    e.preventDefault()
+    setError('')
+    try {
+      const saved = await api<Item>(isNew ? `/api/trips/${id}/items` : `/api/items/${itemId}`, json(isNew ? 'POST' : 'PUT', form))
+      await refresh()
+      if (isNew) nav(`/viagens/${id}/itens/${saved.id}`, { replace: true })
+      else nav(-1)
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }
+
+  async function remove() {
+    if (!confirm('Apagar este item e os documentos dele?')) return
+    await api(`/api/items/${itemId}`, { method: 'DELETE' })
+    await refresh()
+    nav(`/viagens/${id}`, { replace: true })
+  }
+
+  async function addFile(file: File) {
+    const body = new FormData()
+    body.append('item_id', itemId)
+    body.append('file', file)
+    setUploading(true)
+    try {
+      await api<Attachment>(`/api/trips/${id}/attachments`, { method: 'POST', body })
+      await refresh()
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  async function removeFile(a: Attachment) {
+    if (!confirm(`Apagar ${a.filename}?`)) return
+    await api(`/api/attachments/${a.id}`, { method: 'DELETE' })
+    await refresh()
+  }
+
+  if (!isNew && data && !item) return <p className="p-6">Item não encontrado.</p>
+
+  return (
+    <main className="mx-auto max-w-xl px-4 pb-24 pt-6">
+      <button onClick={() => nav(`/viagens/${id}`)} className="mb-4 text-ink">{data?.trip.name ?? 'Voltar'}</button>
+      <form onSubmit={submit} className="space-y-4">
+        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Tipo">
+          {(Object.keys(KINDS) as Kind[]).map((k) => (
+            <button
+              type="button" key={k} role="radio" aria-checked={form.kind === k}
+              onClick={() => setForm({ ...form, kind: k })}
+              className={`rounded-full border px-3 py-1.5 text-sm ${form.kind === k ? 'border-ink bg-ink text-white' : 'border-line bg-paper'}`}
+            >
+              {KINDS[k].emoji} {KINDS[k].label}
+            </button>
+          ))}
+        </div>
+        <label className="block">
+          <span className="mb-1 block text-sm text-muted">Título</span>
+          <input className="field" required maxLength={200} value={form.title} onChange={set('title')} placeholder={form.kind === 'flight' ? 'TAP 1234 Lisboa → Porto' : ''} />
+        </label>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block"><span className="mb-1 block text-sm text-muted">{form.kind === 'lodging' ? 'Check-in' : 'Data'}</span>
+            <input className="field" type="date" value={form.start_date} onChange={set('start_date')} /></label>
+          <label className="block"><span className="mb-1 block text-sm text-muted">Hora</span>
+            <input className="field" type="time" value={form.start_time} onChange={set('start_time')} /></label>
+          <label className="block"><span className="mb-1 block text-sm text-muted">{form.kind === 'lodging' ? 'Check-out' : 'Até (data)'}</span>
+            <input className="field" type="date" min={form.start_date} value={form.end_date} onChange={set('end_date')} /></label>
+          <label className="block"><span className="mb-1 block text-sm text-muted">Hora</span>
+            <input className="field" type="time" value={form.end_time} onChange={set('end_time')} /></label>
+        </div>
+
+        <div>
+          <span className="mb-1 block text-sm text-muted">Endereço</span>
+          <div className="flex gap-2">
+            <input className="field" value={form.address} onChange={set('address')} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), search())} />
+            <button type="button" className="btn btn-quiet shrink-0" onClick={search} disabled={searching}>{searching ? 'Buscando…' : 'Buscar'}</button>
+          </div>
+          {results.length > 0 && (
+            <ul className="mt-2 divide-y divide-line rounded-lg border border-line bg-paper">
+              {results.map((r) => (
+                <li key={`${r.lat},${r.lng}`}>
+                  <button type="button" className="w-full p-3 text-left text-sm" onClick={() => (setForm({ ...form, address: r.label, lat: r.lat, lng: r.lng }), setResults([]))}>{r.label}</button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-2 text-sm text-muted">Toque no mapa para colocar ou mover o pin.</p>
+          <TripMap items={pinItems} onPick={(p) => setForm((f) => ({ ...f, ...p }))} className="mt-1 h-56" />
+          <div className="mt-2 flex flex-wrap gap-2 text-sm">
+            {links && <a className="btn btn-quiet" href={links.google} target="_blank" rel="noreferrer">Abrir no Google Maps</a>}
+            {links && <a className="btn btn-quiet" href={links.waze} target="_blank" rel="noreferrer">Abrir no Waze</a>}
+            {form.lat != null && <button type="button" className="btn btn-danger" onClick={() => setForm({ ...form, lat: null, lng: null })}>Tirar pin</button>}
+          </div>
+        </div>
+
+        <label className="block"><span className="mb-1 block text-sm text-muted">Código da reserva</span>
+          <input className="field board text-lg tracking-wider" value={form.confirmation_code} onChange={set('confirmation_code')} /></label>
+        <label className="block"><span className="mb-1 block text-sm text-muted">Notas</span>
+          <textarea className="field" rows={3} value={form.notes} onChange={set('notes')} /></label>
+
+        {!isNew && (
+          <div>
+            <span className="mb-1 block text-sm text-muted">Documentos</span>
+            <ul className="space-y-1">
+              {files.map((a) => (
+                <li key={a.id} className="flex items-center justify-between gap-2 rounded-lg bg-paper p-3">
+                  <a href={`/api/attachments/${a.id}`} target="_blank" rel="noreferrer" className="min-w-0 truncate text-ink underline">{a.filename}</a>
+                  <button type="button" className="btn-danger shrink-0 text-sm" onClick={() => removeFile(a)}>Apagar</button>
+                </li>
+              ))}
+            </ul>
+            <label className="btn btn-quiet mt-2 inline-block cursor-pointer">
+              {uploading ? 'Enviando…' : 'Anexar foto ou PDF'}
+              <input type="file" accept="image/*,application/pdf" className="sr-only" disabled={uploading}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) addFile(f); e.target.value = '' }} />
+            </label>
+          </div>
+        )}
+
+        {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
+        <button className="btn w-full">{isNew ? 'Criar item' : 'Salvar item'}</button>
+        {isNew && <p className="text-center text-sm text-muted">Depois de criar, você pode anexar documentos.</p>}
+        {!isNew && <button type="button" onClick={remove} className="btn btn-danger w-full">Apagar item</button>}
+      </form>
+    </main>
+  )
+}
