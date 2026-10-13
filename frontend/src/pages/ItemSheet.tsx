@@ -7,13 +7,19 @@ import { mapLinks } from '../links'
 import TripMap from '../components/TripMap'
 import type { Attachment, Item, Kind, TripDetail } from '../types'
 
-type Form = Omit<Item, 'id' | 'trip_id' | 'created_at' | 'updated_at'>
+type Form = Omit<Item, 'id' | 'trip_id' | 'created_at' | 'updated_at' | 'country_code' | 'area'>
 type GeoResult = { label: string; lat: number; lng: number }
 
 const empty: Form = {
   kind: 'activity', title: '', start_date: '', start_time: '', end_date: '', end_time: '',
-  address: '', lat: null, lng: null, confirmation_code: '', notes: '',
+  address: '', lat: null, lng: null, confirmation_code: '', notes: '', ticket: '', time_approx: false,
 }
+
+const TICKETS: { value: Item['ticket']; label: string }[] = [
+  { value: '', label: 'Não precisa' },
+  { value: 'needed', label: 'Precisa comprar' },
+  { value: 'bought', label: 'Comprado' },
+]
 
 export default function ItemSheet() {
   const { id = '', itemId = 'novo' } = useParams()
@@ -35,7 +41,7 @@ export default function ItemSheet() {
   useEffect(() => {
     if (loadedFor.current === itemId || !data) return
     if (item) {
-      const { id: _i, trip_id: _t, created_at: _c, updated_at: _u, ...rest } = item
+      const { id: _i, trip_id: _t, created_at: _c, updated_at: _u, country_code: _cc, area: _a, ...rest } = item
       setForm(rest)
     } else if (isNew) setForm({ ...empty, start_date: data.trip.start_date })
     else return
@@ -134,6 +140,23 @@ export default function ItemSheet() {
             <input className="field" type="date" min={form.start_date} value={form.end_date} onChange={set('end_date')} /></label>
           <label className="block"><span className="mb-1 block text-sm text-muted">Hora</span>
             <input className="field" type="time" value={form.end_time} onChange={set('end_time')} /></label>
+        </div>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" className="h-5 w-5" checked={form.time_approx} onChange={(e) => setForm({ ...form, time_approx: e.target.checked })} />
+          <span>Horário aproximado</span>
+        </label>
+
+        <div>
+          <span className="mb-1 block text-sm text-muted">Ingresso</span>
+          <div className="flex gap-2" role="radiogroup" aria-label="Ingresso">
+            {TICKETS.map((t) => (
+              <button type="button" key={t.value} role="radio" aria-checked={form.ticket === t.value}
+                onClick={() => setForm({ ...form, ticket: t.value })}
+                className={`flex-1 rounded-lg border px-2 py-2 text-sm ${form.ticket === t.value ? 'border-ink bg-ink text-white' : 'border-line bg-paper'}`}>
+                {t.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div>

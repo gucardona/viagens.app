@@ -93,7 +93,10 @@ Link de lista compartilhada do Google Maps não tem formato oficial para leitura
 
 1. Repositório privado no seu GitHub, monorepo com `backend/` (Go) e `frontend/` (React).
 2. Etapa 1: login, viagens, roteiro dia a dia, itens com anexos, mapa e deploy na VPS.
-3. Etapa 2: lugares salvos, importação do Takeout e agrupamento por proximidade.
-4. Etapa 3: gastos e divisão, checklist, modo offline dos documentos.
+3. Etapa 2: roteiro e mapa: mapa sempre visível, mapinha por dia, horários (faixa e aproximado), ingressos para comprar e comprados, detecção de países.
+4. Etapa 3: lugares salvos, importação do Takeout e de links do Google Maps, agrupamento por proximidade, restaurantes e banheiros por perto (OpenStreetMap).
+5. Etapa 4: gastos e divisão, checklist, modo offline dos documentos.
+
+Detalhes das etapas 2 e 3 em `docs/superpowers/specs/2026-10-13-etapas-2-3-design.md` (requisitos novos do Gustavo em 13/10).
 
 Cada etapa vem como um pull request para você revisar.

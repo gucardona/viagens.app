@@ -132,7 +132,7 @@ func (a *App) handleUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer os.Remove(tmp.Name()) // no-op after the rename
-	tmp.Chmod(0o644) // readable by the host user that runs the backup rsync
+	tmp.Chmod(0o644)            // readable by the host user that runs the backup rsync
 	size, err := io.Copy(tmp, file)
 	if cerr := tmp.Close(); err == nil {
 		err = cerr

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -37,6 +38,7 @@ func run(args []string) error {
 	switch {
 	case cmd == "serve":
 		addr := env("ADDR", ":8080")
+		go app.geoLoop(context.Background())
 		slog.Info("listening", "addr", addr)
 		return http.ListenAndServe(addr, app.routes())
 	case cmd == "adduser" && len(args) == 3:

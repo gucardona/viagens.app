@@ -9,14 +9,15 @@ import (
 )
 
 type Trip struct {
-	ID          int64  `json:"id"`
-	Name        string `json:"name"`
-	Destination string `json:"destination"`
-	StartDate   string `json:"start_date"`
-	EndDate     string `json:"end_date"`
-	Notes       string `json:"notes"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
+	ID          int64    `json:"id"`
+	Name        string   `json:"name"`
+	Destination string   `json:"destination"`
+	StartDate   string   `json:"start_date"`
+	EndDate     string   `json:"end_date"`
+	Notes       string   `json:"notes"`
+	CreatedAt   string   `json:"created_at"`
+	UpdatedAt   string   `json:"updated_at"`
+	Countries   []string `json:"countries,omitempty"`
 }
 
 type TripDetail struct {
@@ -93,6 +94,14 @@ func (a *App) handleListTrips(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		trips = append(trips, t)
+	}
+	countries, err := a.tripCountries()
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	for i := range trips {
+		trips[i].Countries = countries[trips[i].ID]
 	}
 	writeJSON(w, 200, trips)
 }
@@ -179,4 +188,23 @@ func (a *App) handleDeleteTrip(w http.ResponseWriter, r *http.Request) {
 	}
 	a.removeFiles(files)
 	w.WriteHeader(204)
+}
+
+// tripCountries maps trip id to the sorted country codes of its items.
+func (a *App) tripCountries() (map[int64][]string, error) {
+	rows, err := a.db.Query(`SELECT DISTINCT trip_id, country_code FROM items WHERE country_code != '' ORDER BY trip_id, country_code`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[int64][]string{}
+	for rows.Next() {
+		var id int64
+		var c string
+		if err := rows.Scan(&id, &c); err != nil {
+			return nil, err
+		}
+		out[id] = append(out[id], c)
+	}
+	return out, rows.Err()
 }

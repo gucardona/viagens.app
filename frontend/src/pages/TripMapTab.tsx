@@ -1,23 +1,23 @@
 import { useCallback, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { buildDays, timeOn } from '../days'
+import { Link, useSearchParams } from 'react-router-dom'
+import { buildDays, pinNumbers, timeLabel } from '../days'
 import { KINDS } from '../kinds'
 import TripMap from '../components/TripMap'
 import type { Item, TripDetail } from '../types'
 
 export default function TripMapTab({ data }: { data: TripDetail }) {
   const days = useMemo(() => buildDays(data.trip, data.items).filter((d) => d.date), [data])
-  const [day, setDay] = useState<string | null>(null)
+  const [params, setParams] = useSearchParams()
+  const day = params.get('dia')
+  const setDay = (d: string | null) => setParams(d ? { aba: 'mapa', dia: d } : { aba: 'mapa' }, { replace: true })
   const [selected, setSelected] = useState<Item | null>(null)
   const items = useMemo(() => {
     const list = day ? days.find((d) => d.date === day)?.items ?? [] : data.items
     return list.filter((i) => i.lat != null)
   }, [day, days, data.items])
+  const numbers = useMemo(() => (day ? pinNumbers(items) : undefined), [day, items])
   const onSelect = useCallback((i: Item) => setSelected(i), [])
-
-  if (!data.items.some((i) => i.lat != null)) {
-    return <p className="mt-10 text-center text-muted">Nenhum item com local ainda. Abra um item e toque no mapa para marcar onde ele fica.</p>
-  }
+  const hasPins = data.items.some((i) => i.lat != null)
 
   return (
     <div className="mt-2">
@@ -31,11 +31,12 @@ export default function TripMapTab({ data }: { data: TripDetail }) {
           </button>
         ))}
       </div>
-      <TripMap items={items} line={day !== null} onSelect={onSelect} className="h-[60dvh]" />
-      {day && items.length === 0 && <p className="mt-2 text-sm text-muted">Nenhum item com local neste dia.</p>}
+      {!hasPins && <p className="mb-2 text-sm text-muted">Nenhum item com local ainda. Abra um item e toque no mapa para marcar onde ele fica.</p>}
+      <TripMap items={items} line={day !== null} numbers={numbers} onSelect={onSelect} geolocate className="h-[60dvh]" />
+      {hasPins && day && items.length === 0 && <p className="mt-2 text-sm text-muted">Nenhum item com local neste dia.</p>}
       {selected && (
         <Link to={`/viagens/${data.trip.id}/itens/${selected.id}`} className="mt-3 flex gap-3 rounded-lg bg-paper p-3" style={{ borderLeft: `4px solid ${KINDS[selected.kind].color}` }}>
-          <span className="board w-12 shrink-0 text-lg text-ink">{(day ? timeOn(selected, day) : selected.start_time) || '—'}</span>
+          <span className="board shrink-0 text-lg text-ink">{timeLabel(selected, day ?? selected.start_date) || '—'}</span>
           <span className="min-w-0">
             <span className="block font-semibold">{KINDS[selected.kind].emoji} {selected.title}</span>
             {selected.address && <span className="block truncate text-sm text-muted">{selected.address}</span>}
