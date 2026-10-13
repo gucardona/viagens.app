@@ -1,6 +1,6 @@
 # Etapa 4: gastos, checklist e documentos offline (design)
 
-Status: aguardando aprovação do Gustavo
+Status: aprovado pelo Gustavo em 13/10
 Plano geral: `docs/plano-app-viagens.md` (etapa 4). Etapas 1 a 3 já estão na `main`.
 
 ## O que estava no plano

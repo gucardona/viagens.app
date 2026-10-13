@@ -33,6 +33,7 @@ type App struct {
 	overpassURL  string
 	nearby       *nearbyCache
 	linkClient   *http.Client
+	ratesURL     string
 }
 
 func newApp(dataDir string, cookieSecure bool) (*App, error) {
@@ -55,6 +56,7 @@ func newApp(dataDir string, cookieSecure bool) (*App, error) {
 		overpassURL:  "https://overpass-api.de/api/interpreter",
 		nearby:       &nearbyCache{data: map[string]nearbyEntry{}},
 		linkClient:   &http.Client{Timeout: 5 * time.Second},
+		ratesURL:     "https://api.frankfurter.app",
 	}, nil
 }
 
@@ -78,6 +80,11 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("GET /api/nearby", a.auth(a.handleNearby))
 	mux.HandleFunc("POST /api/maps-link", a.auth(a.handleMapsLink))
 	mux.HandleFunc("POST /api/trips/{id}/import", a.auth(a.handleImport))
+	mux.HandleFunc("GET /api/users", a.auth(a.handleUsers))
+	mux.HandleFunc("GET /api/trips/{id}/expenses", a.auth(a.handleListExpenses))
+	mux.HandleFunc("POST /api/trips/{id}/expenses", a.auth(a.handleCreateExpense))
+	mux.HandleFunc("PUT /api/expenses/{id}", a.auth(a.handleUpdateExpense))
+	mux.HandleFunc("DELETE /api/expenses/{id}", a.auth(a.handleDeleteExpense))
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) { writeError(w, 404, "Não encontrado") })
 	dist, _ := fs.Sub(webFS, "web/dist")
 	mux.Handle("/", spaHandler(dist))
