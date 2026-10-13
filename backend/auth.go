@@ -28,6 +28,8 @@ type App struct {
 	logins       *loginLimiter
 	geocodeURL   string
 	geoGate      *rateGate
+	reverseURL   string
+	geoKick      chan struct{}
 }
 
 func newApp(dataDir string, cookieSecure bool) (*App, error) {
@@ -45,6 +47,8 @@ func newApp(dataDir string, cookieSecure bool) (*App, error) {
 		logins:       &loginLimiter{fails: map[string][]time.Time{}},
 		geocodeURL:   "https://nominatim.openstreetmap.org/search",
 		geoGate:      &rateGate{every: time.Second},
+		reverseURL:   "https://nominatim.openstreetmap.org/reverse",
+		geoKick:      make(chan struct{}, 1),
 	}, nil
 }
 

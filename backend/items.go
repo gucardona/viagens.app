@@ -153,6 +153,7 @@ func (a *App) handleCreateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id, _ := res.LastInsertId()
+	a.kickGeo()
 	if i, ok := a.getItem(w, id); ok {
 		writeJSON(w, 201, i)
 	}
@@ -180,6 +181,7 @@ func (a *App) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
+	a.kickGeo()
 	if i, ok := a.getItem(w, id); ok {
 		writeJSON(w, 200, i)
 	}
