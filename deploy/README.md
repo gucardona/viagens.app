@@ -1,12 +1,12 @@
 # Deploy na VPS (Hetzner)
 
-Tudo roda com Docker Compose: o app (Go + front embutido) e o Caddy, que cuida do HTTPS sozinho. Os dados ficam em `deploy/data/` (banco `viagens.db` e a pasta `files/` com os documentos).
+O app (Go + front embutido) roda com Docker Compose e escuta só em `127.0.0.1:8005`. O HTTPS vem do Caddy instalado na VPS, o mesmo dos outros sites. Os dados ficam em `deploy/data/` (banco `viagens.db` e a pasta `files/` com os documentos).
 
 ## 1. Antes de começar
 
 - Docker e o plugin `docker compose` instalados na VPS.
 - Um domínio ou subdomínio com registro **A** apontando para o IP da VPS (ex.: `viagens.seudominio.com`).
-- Portas 80 e 443 liberadas no firewall da Hetzner.
+- Caddy instalado na VPS (é ele que cuida do HTTPS) e portas 80 e 443 liberadas no firewall da Hetzner.
 
 ## 2. Clonar o repositório
 
@@ -20,11 +20,18 @@ git clone https://github.com/gucardona/viagens.app.git ~/gupa.dev/viagens.app
 
 ```sh
 cd ~/gupa.dev/viagens.app/deploy
-cp .env.example .env    # edite DOMAIN
 docker compose up -d --build
 ```
 
-O Caddy emite o certificado na primeira visita. Abra `https://SEU_DOMINIO`.
+No `/etc/caddy/Caddyfile` da VPS, acrescente:
+
+```caddy
+viagens.gupa.dev {
+        reverse_proxy 127.0.0.1:8005
+}
+```
+
+E recarregue com `sudo systemctl reload caddy`. O Caddy emite o certificado na primeira visita.
 
 ## 4. Criar as duas contas
 
