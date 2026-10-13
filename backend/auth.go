@@ -77,6 +77,7 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("GET /api/geocode", a.auth(a.handleGeocode))
 	mux.HandleFunc("GET /api/nearby", a.auth(a.handleNearby))
 	mux.HandleFunc("POST /api/maps-link", a.auth(a.handleMapsLink))
+	mux.HandleFunc("POST /api/trips/{id}/import", a.auth(a.handleImport))
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) { writeError(w, 404, "Não encontrado") })
 	dist, _ := fs.Sub(webFS, "web/dist")
 	mux.Handle("/", spaHandler(dist))

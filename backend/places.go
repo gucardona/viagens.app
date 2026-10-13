@@ -46,9 +46,10 @@ func (a *App) reverse(ctx context.Context, lat, lng float64) (country, area stri
 	return body.Address["country_code"], area, nil
 }
 
-// fillGeo looks up country and area for every pinned item whose pin changed since
+// fillGeo first places imported items found by name, then looks up country and area for every pinned item whose pin changed since
 // the last lookup. Items that fail stay pending for the next round.
 func (a *App) fillGeo(ctx context.Context) error {
+	searchErr := a.searchPending(ctx)
 	rows, err := a.db.QueryContext(ctx, `SELECT id, lat, lng, geo_key FROM items WHERE lat IS NOT NULL`)
 	if err != nil {
 		return err
@@ -84,6 +85,9 @@ func (a *App) fillGeo(ctx context.Context) error {
 			country, area, geoKey(p.lat, p.lng), p.id, p.lat, p.lng); err != nil {
 			return err
 		}
+	}
+	if firstErr == nil {
+		firstErr = searchErr
 	}
 	return firstErr
 }
