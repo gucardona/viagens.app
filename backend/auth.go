@@ -52,6 +52,14 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("POST /api/login", a.handleLogin)
 	mux.HandleFunc("POST /api/logout", a.auth(a.handleLogout))
 	mux.HandleFunc("GET /api/me", a.auth(a.handleMe))
+	mux.HandleFunc("GET /api/trips", a.auth(a.handleListTrips))
+	mux.HandleFunc("POST /api/trips", a.auth(a.handleCreateTrip))
+	mux.HandleFunc("GET /api/trips/{id}", a.auth(a.handleGetTrip))
+	mux.HandleFunc("PUT /api/trips/{id}", a.auth(a.handleUpdateTrip))
+	mux.HandleFunc("DELETE /api/trips/{id}", a.auth(a.handleDeleteTrip))
+	mux.HandleFunc("POST /api/trips/{id}/items", a.auth(a.handleCreateItem))
+	mux.HandleFunc("PUT /api/items/{id}", a.auth(a.handleUpdateItem))
+	mux.HandleFunc("DELETE /api/items/{id}", a.auth(a.handleDeleteItem))
 	return csrf(mux)
 }
 
