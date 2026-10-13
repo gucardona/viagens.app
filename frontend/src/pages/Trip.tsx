@@ -4,6 +4,8 @@ import { api } from '../api'
 import { buildDays, timeOn, type DayGroup } from '../days'
 import { KINDS } from '../kinds'
 import type { TripDetail } from '../types'
+import TripMapTab from './TripMapTab'
+import DocumentsTab from './DocumentsTab'
 
 const weekday = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', timeZone: 'UTC' })
 const month = new Intl.DateTimeFormat('pt-BR', { month: 'long', timeZone: 'UTC' })
@@ -82,6 +84,9 @@ export default function Trip() {
           {buildDays(data.trip, data.items).map((d) => <Day key={d.date ?? 'none'} day={d} tripId={id} />)}
         </div>
       )}
+
+      {tab === 'mapa' && <TripMapTab data={data} />}
+      {tab === 'documentos' && <DocumentsTab data={data} />}
 
       {tab === 'roteiro' && (
         <Link to={`/viagens/${id}/itens/novo`} className="btn fixed bottom-20 right-4 z-10 bg-signal! text-ink! shadow-lg">+ Item</Link>
