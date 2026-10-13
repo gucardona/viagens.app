@@ -1,6 +1,6 @@
 # Deploy na VPS (Hetzner)
 
-O app (Go + front embutido) roda com Docker Compose e escuta só em `127.0.0.1:8005`. O HTTPS vem do Caddy instalado na VPS, o mesmo dos outros sites. Os dados ficam em `deploy/data/` (banco `viagens.db` e a pasta `files/` com os documentos).
+O app (Go + front embutido) roda com Docker Compose e escuta só em `127.0.0.1:8010`. O HTTPS vem do Caddy instalado na VPS, o mesmo dos outros sites. Os dados ficam em `deploy/data/` (banco `viagens.db` e a pasta `files/` com os documentos).
 
 ## 1. Antes de começar
 
@@ -27,7 +27,7 @@ No `/etc/caddy/Caddyfile` da VPS, acrescente:
 
 ```caddy
 viagens.gupa.dev {
-        reverse_proxy 127.0.0.1:8005
+        reverse_proxy 127.0.0.1:8010
 }
 ```
 

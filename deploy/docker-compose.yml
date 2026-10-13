@@ -3,6 +3,6 @@ services:
     build: ..
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8005:8080" # HTTPS comes from the host's Caddy (/etc/caddy/Caddyfile)
+      - "127.0.0.1:8010:8080" # HTTPS comes from the host's Caddy (/etc/caddy/Caddyfile)
     volumes:
       - ./data:/data
