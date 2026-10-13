@@ -5,6 +5,7 @@ import (
 	"embed"
 	"io/fs"
 	"net/http"
+	"os"
 	"strings"
 )
 
@@ -24,7 +25,12 @@ func spaHandler(fsys fs.FS) http.Handler {
 	})
 }
 
+// backup writes a consistent copy of the database to dest, replacing any previous copy.
 func backup(db *sql.DB, dest string) error {
-	_, err := db.Exec(`VACUUM INTO ?`, dest)
-	return err
+	tmp := dest + ".tmp"
+	os.Remove(tmp)
+	if _, err := db.Exec(`VACUUM INTO ?`, tmp); err != nil {
+		return err
+	}
+	return os.Rename(tmp, dest)
 }

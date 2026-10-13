@@ -114,3 +114,14 @@ func TestUnknownAPIRouteIs404JSON(t *testing.T) {
 		t.Fatalf("status %d", res.StatusCode)
 	}
 }
+
+func TestBackupOverwritesPreviousFile(t *testing.T) {
+	app, _ := newTestApp(t)
+	dest := filepath.Join(t.TempDir(), "backup.db")
+	if err := backup(app.db, dest); err != nil {
+		t.Fatal(err)
+	}
+	if err := backup(app.db, dest); err != nil {
+		t.Fatalf("second backup: %v", err)
+	}
+}
