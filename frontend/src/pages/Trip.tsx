@@ -10,6 +10,7 @@ import type { Item, TripDetail } from '../types'
 import TripMapTab from './TripMapTab'
 import ExpensesTab from './ExpensesTab'
 import MoreTab from './MoreTab'
+import OfflineBar from '../components/OfflineBar'
 import SavedTab from './SavedTab'
 
 const weekday = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', timeZone: 'UTC' })
@@ -128,6 +129,7 @@ export default function Trip() {
         </div>
         {(data.trip.destination || flags) && <p className="text-muted">{data.trip.destination} {flags && <span aria-label="Países">{flags}</span>}</p>}
       </header>
+      <OfflineBar data={data} />
 
       {tab === 'roteiro' && (
         <>

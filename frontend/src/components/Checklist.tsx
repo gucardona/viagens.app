@@ -37,7 +37,10 @@ export default function Checklist({ tripId }: { tripId: number }) {
         {list?.map((c) => (
           <li key={c.id} className="flex items-center gap-3 rounded-lg bg-paper p-3">
             <input type="checkbox" className="h-5 w-5 shrink-0" checked={c.done} aria-label={c.text}
-              onChange={() => run(api(`/api/checklist/${c.id}`, json('PUT', { text: c.text, done: !c.done })))} />
+              onChange={() => {
+                qc.setQueryData<CheckItem[]>(key, (l) => l?.map((x) => (x.id === c.id ? { ...x, done: !c.done } : x)))
+                run(api(`/api/checklist/${c.id}`, json('PUT', { text: c.text, done: !c.done })))
+              }} />
             <span className={`flex-1 ${c.done ? 'text-muted line-through' : ''}`}>{c.text}</span>
             <button className="text-sm text-muted" aria-label={`Apagar ${c.text}`} onClick={() => run(api(`/api/checklist/${c.id}`, { method: 'DELETE' }))}>✕</button>
           </li>

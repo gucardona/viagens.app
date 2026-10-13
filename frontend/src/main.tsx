@@ -13,6 +13,8 @@ import ExpenseForm from './pages/ExpenseForm'
 // shortcut: no live updates (SSE); data refetches when the app regains focus. Add SSE if simultaneous edits get annoying.
 const queryClient = new QueryClient({ defaultOptions: { queries: { refetchOnWindowFocus: true, retry: false } } })
 
+if (import.meta.env.PROD && 'serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js')
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
