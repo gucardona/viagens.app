@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildDays } from './days'
+import { buildDays, pinNumbers, timeLabel } from './days'
 import type { Item, Trip } from './types'
 
 const trip = { id: 1, name: 'Lisboa', start_date: '2026-11-01', end_date: '2026-11-03' } as Trip
@@ -56,5 +56,39 @@ describe('buildDays', () => {
     const days = buildDays(trip, [idea])
     expect(days.at(-1)).toEqual({ date: null, items: [idea] })
     expect(buildDays(trip, []).some((d) => d.date === null)).toBe(false)
+  })
+})
+
+describe('timeLabel', () => {
+  const on = (p: Partial<Item>) => item({ start_date: '2026-11-02', ...p })
+  it('shows a same-day range with its duration', () => {
+    expect(timeLabel(on({ start_time: '09:00', end_date: '2026-11-02', end_time: '11:00' }), '2026-11-02')).toBe('09:00–11:00 · 2h')
+    expect(timeLabel(on({ start_time: '09:00', end_date: '2026-11-02', end_time: '10:30' }), '2026-11-02')).toBe('09:00–10:30 · 1h30')
+    expect(timeLabel(on({ start_time: '09:00', end_date: '2026-11-02', end_time: '09:45' }), '2026-11-02')).toBe('09:00–09:45 · 45min')
+  })
+  it('shows only the start, approximate with ~', () => {
+    expect(timeLabel(on({ start_time: '09:00' }), '2026-11-02')).toBe('09:00')
+    expect(timeLabel(on({ start_time: '09:00', time_approx: true }), '2026-11-02')).toBe('~09:00')
+    expect(timeLabel(on({ start_time: '09:00', end_date: '2026-11-02', end_time: '11:00', time_approx: true }), '2026-11-02')).toBe('~09:00–11:00 · 2h')
+  })
+  it('marks an end on a later day instead of a duration', () => {
+    expect(timeLabel(on({ kind: 'flight', start_time: '22:10', end_date: '2026-11-03', end_time: '07:30' }), '2026-11-02')).toBe('22:10–07:30 (+1)')
+  })
+  it('shows lodging check-in and check-out as single times', () => {
+    const hotel = on({ kind: 'lodging', start_time: '15:00', end_date: '2026-11-05', end_time: '11:00' })
+    expect(timeLabel(hotel, '2026-11-02')).toBe('15:00')
+    expect(timeLabel(hotel, '2026-11-05')).toBe('11:00')
+  })
+  it('is empty without a time', () => {
+    expect(timeLabel(on({}), '2026-11-02')).toBe('')
+  })
+})
+
+describe('pinNumbers', () => {
+  it('numbers pinned items in order, skipping unpinned', () => {
+    const a = item({ lat: 1, lng: 1 })
+    const b = item({ lat: null, lng: null })
+    const c = item({ lat: 2, lng: 2 })
+    expect(pinNumbers([a, b, c])).toEqual(new Map([[a.id, 1], [c.id, 2]]))
   })
 })

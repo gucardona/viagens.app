@@ -9,6 +9,7 @@ export type Trip = {
   notes: string
   created_at: string
   updated_at: string
+  countries?: string[]
 }
 
 export type Item = {
@@ -25,6 +26,10 @@ export type Item = {
   lng: number | null
   confirmation_code: string
   notes: string
+  ticket: '' | 'needed' | 'bought'
+  time_approx: boolean
+  country_code: string
+  area: string
   created_at: string
   updated_at: string
 }
