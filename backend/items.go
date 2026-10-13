@@ -179,9 +179,15 @@ func (a *App) handleDeleteItem(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	files, err := a.attachmentIDs(`SELECT id FROM attachments WHERE item_id = ?`, id)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
 	if _, err := a.db.Exec(`DELETE FROM items WHERE id = ?`, id); err != nil {
 		serverError(w, err)
 		return
 	}
+	a.removeFiles(files)
 	w.WriteHeader(204)
 }
