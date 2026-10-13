@@ -92,3 +92,35 @@ func TestDeleteTripCascadesItems(t *testing.T) {
 		t.Fatalf("items left: %d", n)
 	}
 }
+
+func TestItemTicketAndApprox(t *testing.T) {
+	app, srv := newTestApp(t)
+	c := login(t, app, srv)
+	trip := createTrip(t, c, srv)
+	url := fmt.Sprintf("%s/api/trips/%d/items", srv.URL, trip.ID)
+
+	plain := decode[Item](t, do(t, c, "POST", url, hotel()))
+	if plain.Ticket != "" || plain.TimeApprox || plain.CountryCode != "" || plain.Area != "" {
+		t.Fatalf("defaults: %+v", plain)
+	}
+
+	in := hotel()
+	in["ticket"], in["time_approx"] = "needed", true
+	res := do(t, c, "POST", url, in)
+	item := decode[Item](t, res)
+	if res.StatusCode != 201 || item.Ticket != "needed" || !item.TimeApprox {
+		t.Fatalf("create: %d %+v", res.StatusCode, item)
+	}
+
+	in["ticket"] = "bought"
+	res = do(t, c, "PUT", fmt.Sprintf("%s/api/items/%d", srv.URL, item.ID), in)
+	if got := decode[Item](t, res); res.StatusCode != 200 || got.Ticket != "bought" {
+		t.Fatalf("update: %d %+v", res.StatusCode, got)
+	}
+
+	in["ticket"] = "x"
+	res = do(t, c, "POST", url, in)
+	if body := decode[map[string]string](t, res); res.StatusCode != 400 || body["error"] != "Ingresso inválido" {
+		t.Fatalf("invalid: %d %v", res.StatusCode, body)
+	}
+}

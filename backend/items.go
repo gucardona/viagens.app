@@ -22,6 +22,10 @@ type Item struct {
 	Lng              *float64 `json:"lng"`
 	ConfirmationCode string   `json:"confirmation_code"`
 	Notes            string   `json:"notes"`
+	Ticket           string   `json:"ticket"`
+	TimeApprox       bool     `json:"time_approx"`
+	CountryCode      string   `json:"country_code"`
+	Area             string   `json:"area"`
 	CreatedAt        string   `json:"created_at"`
 	UpdatedAt        string   `json:"updated_at"`
 }
@@ -38,7 +42,11 @@ type itemInput struct {
 	Lng              *float64 `json:"lng"`
 	ConfirmationCode string   `json:"confirmation_code"`
 	Notes            string   `json:"notes"`
+	Ticket           string   `json:"ticket"`
+	TimeApprox       bool     `json:"time_approx"`
 }
+
+var tickets = map[string]bool{"": true, "needed": true, "bought": true}
 
 var kinds = map[string]bool{"flight": true, "lodging": true, "car": true, "transport": true,
 	"restaurant": true, "activity": true, "event": true, "note": true}
@@ -52,6 +60,9 @@ func (in *itemInput) validate() string {
 	in.Title = strings.TrimSpace(in.Title)
 	if !kinds[in.Kind] {
 		return "Tipo inválido"
+	}
+	if !tickets[in.Ticket] {
+		return "Ingresso inválido"
 	}
 	if in.Title == "" || len([]rune(in.Title)) > 200 {
 		return "Informe um título de até 200 caracteres"
@@ -79,12 +90,12 @@ func (in *itemInput) validate() string {
 	return ""
 }
 
-const itemCols = `id, trip_id, kind, title, start_date, start_time, end_date, end_time, address, lat, lng, confirmation_code, notes, created_at, updated_at`
+const itemCols = `id, trip_id, kind, title, start_date, start_time, end_date, end_time, address, lat, lng, confirmation_code, notes, ticket, time_approx, country_code, area, created_at, updated_at`
 
 func scanItem(row interface{ Scan(...any) error }) (Item, error) {
 	var i Item
 	err := row.Scan(&i.ID, &i.TripID, &i.Kind, &i.Title, &i.StartDate, &i.StartTime, &i.EndDate, &i.EndTime,
-		&i.Address, &i.Lat, &i.Lng, &i.ConfirmationCode, &i.Notes, &i.CreatedAt, &i.UpdatedAt)
+		&i.Address, &i.Lat, &i.Lng, &i.ConfirmationCode, &i.Notes, &i.Ticket, &i.TimeApprox, &i.CountryCode, &i.Area, &i.CreatedAt, &i.UpdatedAt)
 	return i, err
 }
 
@@ -134,9 +145,9 @@ func (a *App) handleCreateItem(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, msg)
 		return
 	}
-	res, err := a.db.Exec(`INSERT INTO items (trip_id, kind, title, start_date, start_time, end_date, end_time, address, lat, lng, confirmation_code, notes)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		tripID, in.Kind, in.Title, in.StartDate, in.StartTime, in.EndDate, in.EndTime, in.Address, in.Lat, in.Lng, in.ConfirmationCode, in.Notes)
+	res, err := a.db.Exec(`INSERT INTO items (trip_id, kind, title, start_date, start_time, end_date, end_time, address, lat, lng, confirmation_code, notes, ticket, time_approx)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		tripID, in.Kind, in.Title, in.StartDate, in.StartTime, in.EndDate, in.EndTime, in.Address, in.Lat, in.Lng, in.ConfirmationCode, in.Notes, in.Ticket, in.TimeApprox)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -164,8 +175,8 @@ func (a *App) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if _, err := a.db.Exec(`UPDATE items SET kind = ?, title = ?, start_date = ?, start_time = ?, end_date = ?, end_time = ?,
-		address = ?, lat = ?, lng = ?, confirmation_code = ?, notes = ?, updated_at = datetime('now') WHERE id = ?`,
-		in.Kind, in.Title, in.StartDate, in.StartTime, in.EndDate, in.EndTime, in.Address, in.Lat, in.Lng, in.ConfirmationCode, in.Notes, id); err != nil {
+		address = ?, lat = ?, lng = ?, confirmation_code = ?, notes = ?, ticket = ?, time_approx = ?, updated_at = datetime('now') WHERE id = ?`,
+		in.Kind, in.Title, in.StartDate, in.StartTime, in.EndDate, in.EndTime, in.Address, in.Lat, in.Lng, in.ConfirmationCode, in.Notes, in.Ticket, in.TimeApprox, id); err != nil {
 		serverError(w, err)
 		return
 	}
