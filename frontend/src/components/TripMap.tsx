@@ -12,33 +12,49 @@ type Props = {
   onSelect?: (item: Item) => void
   onPick?: (p: { lat: number; lng: number }) => void
   numbers?: Map<number, number>
+  colors?: Map<number, string>
+  extra?: Extra[]
+  onMove?: (c: { lat: number; lng: number }) => void
   geolocate?: boolean
   interactive?: boolean
   className?: string
 }
 
-function pin(item: Item, n?: number, onSelect?: (item: Item) => void) {
+export type Extra = { lat: number; lng: number; emoji: string; label: string }
+
+function extraPin(x: Extra) {
+  const el = document.createElement('div')
+  el.title = x.label
+  el.textContent = x.emoji
+  el.style.cssText = 'width:26px;height:26px;border-radius:50%;background:white;display:grid;place-items:center;font-size:14px;box-shadow:0 1px 4px rgba(18,53,91,.5)'
+  return el
+}
+
+function pin(item: Item, n?: number, onSelect?: (item: Item) => void, color?: string) {
   const el = document.createElement('button')
   el.type = 'button'
   el.setAttribute('aria-label', item.title)
   el.textContent = n ? String(n) : KINDS[item.kind].emoji
   const size = n ? 26 : 34
-  el.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;border:${n ? 2 : 3}px solid white;background:${KINDS[item.kind].color};color:white;font:700 ${n ? 14 : 16}px var(--font-board);box-shadow:0 1px 4px rgba(18,53,91,.4);cursor:pointer`
+  el.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;border:${n ? 2 : 3}px solid white;background:${color ?? KINDS[item.kind].color};color:white;font:700 ${n ? 14 : 16}px var(--font-board);box-shadow:0 1px 4px rgba(18,53,91,.4);cursor:pointer`
   if (onSelect) el.addEventListener('click', (e) => (e.stopPropagation(), onSelect(item)))
   return el
 }
 
-export default function TripMap({ items, line, onSelect, onPick, numbers, geolocate, interactive = true, className = 'h-72' }: Props) {
+export default function TripMap({ items, line, onSelect, onPick, numbers, colors, extra, onMove, geolocate, interactive = true, className = 'h-72' }: Props) {
   const box = useRef<HTMLDivElement>(null)
   const map = useRef<maplibregl.Map>()
   const pickRef = useRef(onPick)
   pickRef.current = onPick
+  const moveRef = useRef(onMove)
+  moveRef.current = onMove
 
   useEffect(() => {
     const m = new maplibregl.Map({ container: box.current!, style: STYLE, center: [-30, 20], zoom: 1.5, attributionControl: { compact: true }, interactive })
     if (interactive) m.addControl(new maplibregl.NavigationControl({ showCompass: false }))
     if (geolocate) m.addControl(new maplibregl.GeolocateControl({ trackUserLocation: false }))
     m.on('click', (e) => pickRef.current?.({ lat: e.lngLat.lat, lng: e.lngLat.lng }))
+    m.on('moveend', () => moveRef.current?.({ lat: m.getCenter().lat, lng: m.getCenter().lng }))
     map.current = m
     return () => m.remove()
   }, [])
@@ -46,7 +62,7 @@ export default function TripMap({ items, line, onSelect, onPick, numbers, geoloc
   useEffect(() => {
     const m = map.current!
     const pinned = items.filter((i) => i.lat != null && i.lng != null)
-    const markers = pinned.map((i) => new maplibregl.Marker({ element: pin(i, numbers?.get(i.id), onSelect) }).setLngLat([i.lng!, i.lat!]).addTo(m))
+    const markers = pinned.map((i) => new maplibregl.Marker({ element: pin(i, numbers?.get(i.id), onSelect, colors?.get(i.id)) }).setLngLat([i.lng!, i.lat!]).addTo(m))
     const coords = pinned.map((i) => [i.lng!, i.lat!] as [number, number])
 
     const drawLine = () => {
@@ -65,7 +81,12 @@ export default function TripMap({ items, line, onSelect, onPick, numbers, geoloc
       m.fitBounds(b, { padding: 48, maxZoom: 15, duration: 0 })
     }
     return () => markers.forEach((mk) => mk.remove())
-  }, [items, line, onSelect, numbers])
+  }, [items, line, onSelect, numbers, colors])
+
+  useEffect(() => {
+    const markers = (extra ?? []).map((x) => new maplibregl.Marker({ element: extraPin(x) }).setLngLat([x.lng, x.lat]).addTo(map.current!))
+    return () => markers.forEach((mk) => mk.remove())
+  }, [extra])
 
   return <div ref={box} className={`w-full overflow-hidden rounded-lg ${className}`} />
 }

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, json } from '../api'
 import { KINDS } from '../kinds'
 import { mapLinks } from '../links'
-import TripMap from '../components/TripMap'
+import TripMap, { type Extra } from '../components/TripMap'
+import Nearby from '../components/Nearby'
 import type { Attachment, Item, Kind, TripDetail } from '../types'
 
 type Form = Omit<Item, 'id' | 'trip_id' | 'created_at' | 'updated_at' | 'country_code' | 'area'>
@@ -35,6 +36,8 @@ export default function ItemSheet() {
   const [results, setResults] = useState<GeoResult[]>([])
   const [searching, setSearching] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [extra, setExtra] = useState<Extra[]>([])
+  const [params] = useSearchParams()
 
   // Fill the form once per item; later refetches (upload, focus) must not overwrite unsaved edits.
   const loadedFor = useRef<string>()
@@ -43,7 +46,7 @@ export default function ItemSheet() {
     if (item) {
       const { id: _i, trip_id: _t, created_at: _c, updated_at: _u, country_code: _cc, area: _a, ...rest } = item
       setForm(rest)
-    } else if (isNew) setForm({ ...empty, start_date: data.trip.start_date })
+    } else if (isNew) setForm({ ...empty, start_date: params.has('salvo') ? '' : data.trip.start_date })
     else return
     loadedFor.current = itemId
   }, [item, isNew, data, itemId])
@@ -175,13 +178,17 @@ export default function ItemSheet() {
             </ul>
           )}
           <p className="mt-2 text-sm text-muted">Toque no mapa para colocar ou mover o pin.</p>
-          <TripMap items={pinItems} onPick={(p) => setForm((f) => ({ ...f, ...p }))} className="mt-1 h-56" />
+          <TripMap items={pinItems} extra={extra} onPick={(p) => setForm((f) => ({ ...f, ...p }))} className="mt-1 h-56" />
           <div className="mt-2 flex flex-wrap gap-2 text-sm">
             {links && <a className="btn btn-quiet" href={links.google} target="_blank" rel="noreferrer">Abrir no Google Maps</a>}
             {links && <a className="btn btn-quiet" href={links.waze} target="_blank" rel="noreferrer">Abrir no Waze</a>}
             {form.lat != null && <button type="button" className="btn btn-danger" onClick={() => setForm({ ...form, lat: null, lng: null })}>Tirar pin</button>}
           </div>
         </div>
+
+        {!isNew && data && item?.lat != null && (
+          <Nearby center={{ lat: item.lat, lng: item.lng! }} data={data} excludeId={item.id} onPins={setExtra} />
+        )}
 
         <label className="block"><span className="mb-1 block text-sm text-muted">Código da reserva</span>
           <input className="field board text-lg tracking-wider" value={form.confirmation_code} onChange={set('confirmation_code')} /></label>

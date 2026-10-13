@@ -2,7 +2,8 @@ import { useCallback, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { buildDays, pinNumbers, timeLabel } from '../days'
 import { KINDS } from '../kinds'
-import TripMap from '../components/TripMap'
+import TripMap, { type Extra } from '../components/TripMap'
+import Nearby from '../components/Nearby'
 import type { Item, TripDetail } from '../types'
 
 export default function TripMapTab({ data }: { data: TripDetail }) {
@@ -18,6 +19,8 @@ export default function TripMapTab({ data }: { data: TripDetail }) {
   const numbers = useMemo(() => (day ? pinNumbers(items) : undefined), [day, items])
   const onSelect = useCallback((i: Item) => setSelected(i), [])
   const hasPins = data.items.some((i) => i.lat != null)
+  const [center, setCenter] = useState<{ lat: number; lng: number } | null>(null)
+  const [extra, setExtra] = useState<Extra[]>([])
 
   return (
     <div className="mt-2">
@@ -32,8 +35,12 @@ export default function TripMapTab({ data }: { data: TripDetail }) {
         ))}
       </div>
       {!hasPins && <p className="mb-2 text-sm text-muted">Nenhum item com local ainda. Abra um item e toque no mapa para marcar onde ele fica.</p>}
-      <TripMap items={items} line={day !== null} numbers={numbers} onSelect={onSelect} geolocate className="h-[60dvh]" />
+      <TripMap items={items} line={day !== null} numbers={numbers} onSelect={onSelect} onMove={setCenter} extra={extra} geolocate className="h-[55dvh]" />
       {hasPins && day && items.length === 0 && <p className="mt-2 text-sm text-muted">Nenhum item com local neste dia.</p>}
+      <div className="mt-3">
+        <Nearby center={center} data={data} onPins={setExtra} />
+        <p className="mt-1 text-xs text-muted">A busca é em volta do centro do mapa. Use o 📍 para ir até onde vocês estão.</p>
+      </div>
       {selected && (
         <Link to={`/viagens/${data.trip.id}/itens/${selected.id}`} className="mt-3 flex gap-3 rounded-lg bg-paper p-3" style={{ borderLeft: `4px solid ${KINDS[selected.kind].color}` }}>
           <span className="board shrink-0 text-lg text-ink">{timeLabel(selected, day ?? selected.start_date) || '—'}</span>

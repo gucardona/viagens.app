@@ -9,6 +9,7 @@ import DayMap from '../components/DayMap'
 import type { Item, TripDetail } from '../types'
 import TripMapTab from './TripMapTab'
 import DocumentsTab from './DocumentsTab'
+import SavedTab from './SavedTab'
 
 const weekday = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', timeZone: 'UTC' })
 const month = new Intl.DateTimeFormat('pt-BR', { month: 'long', timeZone: 'UTC' })
@@ -98,6 +99,7 @@ function TicketsToBuy({ items, tripId }: { items: Item[]; tripId: string }) {
 
 const TABS = [
   { key: 'roteiro', label: 'Roteiro' },
+  { key: 'salvos', label: 'Salvos' },
   { key: 'mapa', label: 'Mapa' },
   { key: 'documentos', label: 'Documentos' },
 ] as const
@@ -108,7 +110,7 @@ export default function Trip() {
   const tab = params.get('aba') ?? 'roteiro'
   const { data, error } = useQuery({ queryKey: ['trip', id], queryFn: () => api<TripDetail>(`/api/trips/${id}`) })
 
-  const days = useMemo(() => (data ? buildDays(data.trip, data.items) : []), [data])
+  const days = useMemo(() => (data ? buildDays(data.trip, data.items).filter((d) => d.date) : []), [data])
   const flags = useMemo(() => [...new Set(data?.items.map((i) => i.country_code).filter(Boolean))].sort().map(flag).join(' '), [data])
 
   if (error) return <p role="alert" className="p-6 text-red-700">{error.message}</p>
@@ -134,6 +136,7 @@ export default function Trip() {
         </>
       )}
 
+      {tab === 'salvos' && <SavedTab data={data} />}
       {tab === 'mapa' && <TripMapTab data={data} />}
       {tab === 'documentos' && <DocumentsTab data={data} />}
 
