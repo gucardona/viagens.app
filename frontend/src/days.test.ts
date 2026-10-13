@@ -45,6 +45,12 @@ describe('buildDays', () => {
     expect(days).toHaveLength(4)
   })
 
+  it('does not fill the gap to a far-away date', () => {
+    const typo = item({ start_date: '2062-11-02' })
+    const days = buildDays(trip, [typo])
+    expect(days.map((d) => d.date)).toEqual(['2026-11-01', '2026-11-02', '2026-11-03', '2062-11-02'])
+  })
+
   it('puts undated items last and omits that group when empty', () => {
     const idea = item({})
     const days = buildDays(trip, [idea])

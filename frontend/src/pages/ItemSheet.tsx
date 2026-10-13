@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, json } from '../api'
@@ -30,15 +30,21 @@ export default function ItemSheet() {
   const [searching, setSearching] = useState(false)
   const [uploading, setUploading] = useState(false)
 
+  // Fill the form once per item; later refetches (upload, focus) must not overwrite unsaved edits.
+  const loadedFor = useRef<string>()
   useEffect(() => {
+    if (loadedFor.current === itemId || !data) return
     if (item) {
       const { id: _i, trip_id: _t, created_at: _c, updated_at: _u, ...rest } = item
       setForm(rest)
-    } else if (isNew && data) setForm((f) => ({ ...f, start_date: f.start_date || data.trip.start_date }))
-  }, [item, isNew, data])
+    } else if (isNew) setForm({ ...empty, start_date: data.trip.start_date })
+    else return
+    loadedFor.current = itemId
+  }, [item, isNew, data, itemId])
 
   const set = (k: keyof Form) => (e: { target: { value: string } }) => setForm({ ...form, [k]: e.target.value })
-  const pinItems = useMemo(() => (form.lat != null ? [{ ...empty, ...form, id: 0, trip_id: 0 } as Item] : []), [form])
+  const { lat, lng, kind } = form
+  const pinItems = useMemo(() => (lat != null ? [{ ...empty, kind, lat, lng, id: 0, trip_id: 0 } as Item] : []), [lat, lng, kind])
   const links = mapLinks(form)
   const refresh = () => qc.invalidateQueries({ queryKey: ['trip', id] })
 

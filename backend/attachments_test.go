@@ -185,3 +185,14 @@ func TestHTMLUploadIsNotRenderedInline(t *testing.T) {
 		t.Fatalf("headers: %q", d)
 	}
 }
+
+func TestUploadedFileIsReadableByBackupUser(t *testing.T) {
+	app, srv := newTestApp(t)
+	c := login(t, app, srv)
+	trip := createTrip(t, c, srv)
+	att := decode[Attachment](t, upload(t, c, fmt.Sprintf("%s/api/trips/%d/attachments", srv.URL, trip.ID), "a.pdf", "application/pdf", []byte("x"), 0))
+	st, err := os.Stat(app.filePath(att.ID))
+	if err != nil || st.Mode().Perm() != 0o644 {
+		t.Fatalf("mode %v err %v", st.Mode().Perm(), err)
+	}
+}
