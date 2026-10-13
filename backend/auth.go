@@ -32,6 +32,7 @@ type App struct {
 	geoKick      chan struct{}
 	overpassURL  string
 	nearby       *nearbyCache
+	linkClient   *http.Client
 }
 
 func newApp(dataDir string, cookieSecure bool) (*App, error) {
@@ -53,6 +54,7 @@ func newApp(dataDir string, cookieSecure bool) (*App, error) {
 		geoKick:      make(chan struct{}, 1),
 		overpassURL:  "https://overpass-api.de/api/interpreter",
 		nearby:       &nearbyCache{data: map[string]nearbyEntry{}},
+		linkClient:   &http.Client{Timeout: 5 * time.Second},
 	}, nil
 }
 
@@ -74,6 +76,7 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("DELETE /api/attachments/{id}", a.auth(a.handleDeleteAttachment))
 	mux.HandleFunc("GET /api/geocode", a.auth(a.handleGeocode))
 	mux.HandleFunc("GET /api/nearby", a.auth(a.handleNearby))
+	mux.HandleFunc("POST /api/maps-link", a.auth(a.handleMapsLink))
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) { writeError(w, 404, "Não encontrado") })
 	dist, _ := fs.Sub(webFS, "web/dist")
 	mux.Handle("/", spaHandler(dist))
