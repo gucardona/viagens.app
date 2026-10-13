@@ -30,6 +30,8 @@ type App struct {
 	geoGate      *rateGate
 	reverseURL   string
 	geoKick      chan struct{}
+	overpassURL  string
+	nearby       *nearbyCache
 }
 
 func newApp(dataDir string, cookieSecure bool) (*App, error) {
@@ -49,6 +51,8 @@ func newApp(dataDir string, cookieSecure bool) (*App, error) {
 		geoGate:      &rateGate{every: time.Second},
 		reverseURL:   "https://nominatim.openstreetmap.org/reverse",
 		geoKick:      make(chan struct{}, 1),
+		overpassURL:  "https://overpass-api.de/api/interpreter",
+		nearby:       &nearbyCache{data: map[string]nearbyEntry{}},
 	}, nil
 }
 
@@ -69,6 +73,7 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("GET /api/attachments/{id}", a.auth(a.handleDownload))
 	mux.HandleFunc("DELETE /api/attachments/{id}", a.auth(a.handleDeleteAttachment))
 	mux.HandleFunc("GET /api/geocode", a.auth(a.handleGeocode))
+	mux.HandleFunc("GET /api/nearby", a.auth(a.handleNearby))
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) { writeError(w, 404, "Não encontrado") })
 	dist, _ := fs.Sub(webFS, "web/dist")
 	mux.Handle("/", spaHandler(dist))
