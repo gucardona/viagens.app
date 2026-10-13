@@ -8,6 +8,7 @@ import Trips from './pages/Trips'
 import TripForm from './pages/TripForm'
 import Trip from './pages/Trip'
 import ItemSheet from './pages/ItemSheet'
+import ExpenseForm from './pages/ExpenseForm'
 
 // shortcut: no live updates (SSE); data refetches when the app regains focus. Add SSE if simultaneous edits get annoying.
 const queryClient = new QueryClient({ defaultOptions: { queries: { refetchOnWindowFocus: true, retry: false } } })
@@ -23,6 +24,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/viagens/:id" element={<Trip />} />
           <Route path="/viagens/:id/editar" element={<TripForm />} />
           <Route path="/viagens/:id/itens/:itemId" element={<ItemSheet />} />
+          <Route path="/viagens/:id/gastos/:expenseId" element={<ExpenseForm />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

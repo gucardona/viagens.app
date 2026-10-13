@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, json } from '../api'
 import { KINDS } from '../kinds'
 import { mapLinks } from '../links'
 import TripMap, { type Extra } from '../components/TripMap'
 import Nearby from '../components/Nearby'
+import { useExpenses } from './ExpensesTab'
+import { money } from '../money'
 import type { Attachment, Item, Kind, TripDetail } from '../types'
 
 type Form = Omit<Item, 'id' | 'trip_id' | 'created_at' | 'updated_at' | 'country_code' | 'area'>
@@ -38,6 +40,8 @@ export default function ItemSheet() {
   const [uploading, setUploading] = useState(false)
   const [extra, setExtra] = useState<Extra[]>([])
   const [params] = useSearchParams()
+  const { data: expenses } = useExpenses(id)
+  const spent = expenses?.expenses.filter((e) => String(e.item_id) === itemId) ?? []
 
   // Fill the form once per item; later refetches (upload, focus) must not overwrite unsaved edits.
   const loadedFor = useRef<string>()
@@ -211,6 +215,18 @@ export default function ItemSheet() {
               <input type="file" accept="image/*,application/pdf" className="sr-only" disabled={uploading}
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) addFile(f); e.target.value = '' }} />
             </label>
+          </div>
+        )}
+
+        {!isNew && (
+          <div>
+            <span className="mb-1 block text-sm text-muted">Gastos</span>
+            {spent.map((e) => (
+              <Link key={e.id} to={`/viagens/${id}/gastos/${e.id}`} className="mb-1 flex justify-between rounded-lg bg-paper p-3">
+                <span className="truncate">{e.title}</span><span className="board text-lg text-ink">{money(e.amount_cents, e.currency)}</span>
+              </Link>
+            ))}
+            <Link to={`/viagens/${id}/gastos/novo?item=${itemId}`} className="btn btn-quiet inline-block">+ Adicionar gasto</Link>
           </div>
         )}
 

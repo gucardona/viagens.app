@@ -8,7 +8,8 @@ import { KINDS } from '../kinds'
 import DayMap from '../components/DayMap'
 import type { Item, TripDetail } from '../types'
 import TripMapTab from './TripMapTab'
-import DocumentsTab from './DocumentsTab'
+import ExpensesTab from './ExpensesTab'
+import MoreTab from './MoreTab'
 import SavedTab from './SavedTab'
 
 const weekday = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', timeZone: 'UTC' })
@@ -101,13 +102,14 @@ const TABS = [
   { key: 'roteiro', label: 'Roteiro' },
   { key: 'salvos', label: 'Salvos' },
   { key: 'mapa', label: 'Mapa' },
-  { key: 'documentos', label: 'Documentos' },
+  { key: 'gastos', label: 'Gastos' },
+  { key: 'mais', label: 'Mais' },
 ] as const
 
 export default function Trip() {
   const { id = '' } = useParams()
   const [params, setParams] = useSearchParams()
-  const tab = params.get('aba') ?? 'roteiro'
+  const tab = params.get('aba') === 'documentos' ? 'mais' : params.get('aba') ?? 'roteiro'
   const { data, error } = useQuery({ queryKey: ['trip', id], queryFn: () => api<TripDetail>(`/api/trips/${id}`) })
 
   const days = useMemo(() => (data ? buildDays(data.trip, data.items).filter((d) => d.date) : []), [data])
@@ -138,7 +140,8 @@ export default function Trip() {
 
       {tab === 'salvos' && <SavedTab data={data} />}
       {tab === 'mapa' && <TripMapTab data={data} />}
-      {tab === 'documentos' && <DocumentsTab data={data} />}
+      {tab === 'gastos' && <ExpensesTab data={data} />}
+      {tab === 'mais' && <MoreTab data={data} />}
 
       {tab === 'roteiro' && (
         <Link to={`/viagens/${id}/itens/novo`} className="btn fixed bottom-20 right-4 z-10 bg-signal! text-ink! shadow-lg">+ Item</Link>

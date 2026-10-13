@@ -45,3 +45,31 @@ export type Attachment = {
 }
 
 export type TripDetail = { trip: Trip; items: Item[]; attachments: Attachment[] }
+
+export type Expense = {
+  id: number
+  trip_id: number
+  item_id: number | null
+  title: string
+  amount_cents: number
+  currency: string
+  category: import('./money').Category
+  paid_by: number
+  payer_share: number
+  date: string
+  rate: number | null
+  created_at: string
+  brl_cents?: number | null
+}
+
+export type ExpenseSummary = {
+  expenses: Expense[]
+  total_cents: number
+  by_category: Record<string, number>
+  by_day: Record<string, number>
+  missing_rate: number
+  balance: { from: string; to: string; cents: number } | null
+}
+
+export type User = { id: number; name: string }
+export type CheckItem = { id: number; text: string; done: boolean }
