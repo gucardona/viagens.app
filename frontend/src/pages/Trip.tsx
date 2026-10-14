@@ -120,9 +120,9 @@ export default function Trip() {
   if (!data) return null
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pb-28 pt-6">
+    <div className="mx-auto max-w-2xl px-4 pb-32 pt-[max(1rem,env(safe-area-inset-top))]">
       <header className="mb-2">
-        <Link to="/" className="text-ink">Viagens</Link>
+        <Link to="/" className="-ml-1 inline-flex min-h-11 items-center gap-1 pr-3 font-semibold text-ink"><span aria-hidden className="text-2xl leading-none">‹</span> Viagens</Link>
         <div className="mt-2 flex items-start justify-between gap-4">
           <h1 className="board text-4xl font-bold leading-tight text-ink">{data.trip.name}</h1>
           <Link to={`/viagens/${id}/editar`} className="btn btn-quiet shrink-0">Editar</Link>
@@ -146,7 +146,7 @@ export default function Trip() {
       {tab === 'mais' && <MoreTab data={data} />}
 
       {tab === 'roteiro' && (
-        <Link to={`/viagens/${id}/itens/novo`} className="btn fixed bottom-20 right-4 z-10 bg-signal! text-ink! shadow-lg">+ Item</Link>
+        <Link to={`/viagens/${id}/itens/novo`} className="btn fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-10 bg-signal text-ink shadow-lg">+ Item</Link>
       )}
 
       <nav className="fixed inset-x-0 bottom-0 z-20 flex border-t border-line bg-paper pb-[env(safe-area-inset-bottom)]">

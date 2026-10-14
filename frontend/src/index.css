@@ -26,23 +26,37 @@ body {
 
 .board { font-family: var(--font-board); font-variant-numeric: tabular-nums; }
 
-.field {
-  display: block;
-  width: 100%;
-  border: 1px solid var(--color-line);
-  border-radius: 0.5rem;
-  background: var(--color-paper);
-  padding: 0.6rem 0.75rem;
-  font-size: 1rem;
+/* In a layer so Tailwind utilities (text-2xl, w-16, px-2) can override them. */
+@layer components {
+  .field {
+    display: block;
+    width: 100%;
+    border: 1px solid var(--color-line);
+    border-radius: 0.5rem;
+    background: var(--color-paper);
+    padding: 0.6rem 0.75rem;
+    font-size: 1rem;
+  }
+
+  .btn {
+    border-radius: 0.5rem;
+    padding: 0.65rem 1rem;
+    font-weight: 600;
+    text-align: center;
+    background: var(--color-ink);
+    color: white;
+  }
+  .btn:disabled { opacity: 0.5; }
+  .btn-quiet { background: transparent; color: var(--color-ink); border: 1px solid var(--color-line); }
+  .btn-danger { background: transparent; color: #B42318; }
 }
 
-.btn {
-  border-radius: 0.5rem;
-  padding: 0.65rem 1rem;
-  font-weight: 600;
-  background: var(--color-ink);
-  color: white;
+/* Safari on iOS ignores width on date/time inputs and collapses them when empty. */
+input[type="date"].field, input[type="time"].field {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+  min-height: 2.9rem;
+  text-align: left;
 }
-.btn:disabled { opacity: 0.5; }
-.btn-quiet { background: transparent; color: var(--color-ink); border: 1px solid var(--color-line); }
-.btn-danger { background: transparent; color: #B42318; }
+input[type="date"].field::-webkit-date-and-time-value { text-align: left; }

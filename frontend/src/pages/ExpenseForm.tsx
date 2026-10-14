@@ -1,20 +1,20 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, json } from '../api'
 import { CATEGORIES, categoryFor, parseMoney, type Category } from '../money'
 import { useExpenses, useUsers } from './ExpensesTab'
+import { BackBar, SaveCancel, useBack } from '../components/FormBar'
 import type { Expense, TripDetail } from '../types'
 
 const CURRENCIES = ['BRL', 'EUR', 'USD', 'GBP', 'CHF', 'JPY', 'ARS', 'CLP', 'MXN', 'CAD', 'AUD']
-const SPLITS = [{ v: 50, label: 'Metade' }, { v: 100, label: 'Só quem pagou' }]
+const SPLITS = [{ v: 50, label: 'Metade' }, { v: 100, label: 'Quem pagou' }]
 const today = () => new Date().toLocaleDateString('sv')
 
 export default function ExpenseForm() {
   const { id = '', expenseId = 'novo' } = useParams()
   const [params] = useSearchParams()
   const isNew = expenseId === 'novo'
-  const nav = useNavigate()
   const qc = useQueryClient()
   const { data: trip } = useQuery({ queryKey: ['trip', id], queryFn: () => api<TripDetail>(`/api/trips/${id}`) })
   const { data: s } = useExpenses(id)
@@ -44,6 +44,7 @@ export default function ExpenseForm() {
       setDate(existing.date)
       setPaidBy(existing.paid_by)
       setShare(existing.payer_share)
+      setOtherShare(existing.payer_share !== 50 && existing.payer_share !== 100)
       setRate(existing.rate != null ? String(existing.rate).replace('.', ',') : '')
       setItemId(existing.item_id)
     } else if (isNew) {
@@ -67,7 +68,7 @@ export default function ExpenseForm() {
     try {
       await api<Expense>(isNew ? `/api/trips/${id}/expenses` : `/api/expenses/${expenseId}`, json(isNew ? 'POST' : 'PUT', body))
       await qc.invalidateQueries({ queryKey: ['expenses', id] })
-      nav(-1)
+      back()
     } catch (err) {
       setError((err as Error).message)
     }
@@ -77,15 +78,18 @@ export default function ExpenseForm() {
     if (!confirm('Apagar este gasto?')) return
     await api(`/api/expenses/${expenseId}`, { method: 'DELETE' })
     await qc.invalidateQueries({ queryKey: ['expenses', id] })
-    nav(-1)
+    back()
   }
 
   if (!isNew && s && !existing) return <p className="p-6">Gasto não encontrado.</p>
+  const back = useBack(`/viagens/${id}?aba=gastos`)
+  const [otherShare, setOtherShare] = useState(false)
+  const seg = (on: boolean) => `rounded-lg border px-2 py-2.5 text-sm ${on ? 'border-ink bg-ink text-white' : 'border-line bg-paper'}`
   const chip = (on: boolean) => `rounded-full border px-3 py-1.5 text-sm ${on ? 'border-ink bg-ink text-white' : 'border-line bg-paper'}`
 
   return (
-    <main className="mx-auto max-w-xl px-4 pb-24 pt-6">
-      <button onClick={() => nav(-1)} className="mb-4 text-ink">{trip?.trip.name ?? 'Voltar'}</button>
+    <main className="mx-auto max-w-xl px-4 pb-24">
+      <BackBar label={trip?.trip.name ?? 'Voltar'} onBack={back} />
       <form onSubmit={submit} className="space-y-4">
         <div className="flex gap-2">
           <label className="block flex-1"><span className="mb-1 block text-sm text-muted">Valor</span>
@@ -114,20 +118,23 @@ export default function ExpenseForm() {
         </div>
         <div>
           <span className="mb-1 block text-sm text-muted">Divisão</span>
-          <div className="flex items-center gap-2" role="radiogroup" aria-label="Divisão">
-            {SPLITS.map((o) => <button type="button" key={o.v} role="radio" aria-checked={share === o.v} onClick={() => setShare(o.v)} className={chip(share === o.v)}>{o.label}</button>)}
-            <label className="flex items-center gap-1 text-sm">
-              <input className="field w-16 px-2! py-1!" type="number" min={0} max={100} value={share} onChange={(e) => setShare(Number(e.target.value))} aria-label="Parte de quem pagou (%)" />
-              % de quem pagou
-            </label>
+          <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Divisão">
+            {SPLITS.map((o) => <button type="button" key={o.v} role="radio" aria-checked={!otherShare && share === o.v} onClick={() => (setOtherShare(false), setShare(o.v))} className={seg(!otherShare && share === o.v)}>{o.label}</button>)}
+            <button type="button" role="radio" aria-checked={otherShare} onClick={() => setOtherShare(true)} className={seg(otherShare)}>Outra</button>
           </div>
+          {otherShare && (
+            <label className="mt-2 flex items-center gap-2 text-sm">
+              <input className="field w-20" type="number" inputMode="numeric" min={0} max={100} value={share} onChange={(e) => setShare(Number(e.target.value))} aria-label="Parte de quem pagou (%)" />
+              % fica com quem pagou
+            </label>
+          )}
         </div>
         {currency !== 'BRL' && (
           <label className="block"><span className="mb-1 block text-sm text-muted">Cotação (R$ por 1 {currency}, opcional)</span>
             <input className="field" inputMode="decimal" value={rate} onChange={(e) => setRate(e.target.value)} placeholder="Automática pela data" /></label>
         )}
         {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-        <button className="btn w-full">{isNew ? 'Adicionar gasto' : 'Salvar gasto'}</button>
+        <SaveCancel save={isNew ? 'Adicionar' : 'Salvar'} onCancel={back} />
         {!isNew && <button type="button" onClick={remove} className="btn btn-danger w-full">Apagar gasto</button>}
       </form>
     </main>
