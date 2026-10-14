@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, json } from '../api'
@@ -16,8 +16,11 @@ export default function TripForm() {
   const [error, setError] = useState('')
   const { data } = useQuery({ queryKey: ['trip', id], queryFn: () => api<TripDetail>(`/api/trips/${id}`), enabled: !!id })
 
+  // Fill once: a refetch (the other person saving, live updates) must not erase what is being typed.
+  const loaded = useRef(false)
   useEffect(() => {
-    if (data) {
+    if (data && !loaded.current) {
+      loaded.current = true
       const { name, destination, start_date, end_date, notes } = data.trip
       setForm({ name, destination, start_date, end_date, notes })
     }

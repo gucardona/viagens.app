@@ -47,3 +47,14 @@ export const dayTimes = (n: number) =>
     const m = 600 + 90 * k
     return m < 1440 ? `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}` : ''
   })
+
+// groupNear joins screen points (px) closer than `px` to the first point of a group; returns index groups.
+export function groupNear(points: { x: number; y: number }[], px: number): number[][] {
+  const groups: number[][] = []
+  points.forEach((p, i) => {
+    const g = groups.find((g) => Math.hypot(points[g[0]].x - p.x, points[g[0]].y - p.y) < px)
+    if (g) g.push(i)
+    else groups.push([i])
+  })
+  return groups
+}
