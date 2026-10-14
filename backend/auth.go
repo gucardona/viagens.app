@@ -35,6 +35,7 @@ type App struct {
 	linkClient   *http.Client
 	ratesURL     string
 	photonURL    string
+	events       *hub
 }
 
 func newApp(dataDir string, cookieSecure bool) (*App, error) {
@@ -59,6 +60,7 @@ func newApp(dataDir string, cookieSecure bool) (*App, error) {
 		linkClient:   &http.Client{Timeout: 5 * time.Second},
 		ratesURL:     "https://api.frankfurter.app",
 		photonURL:    "https://photon.komoot.io/api/",
+		events:       &hub{subs: map[chan struct{}]struct{}{}},
 	}, nil
 }
 
@@ -67,6 +69,7 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("POST /api/login", a.handleLogin)
 	mux.HandleFunc("POST /api/logout", a.auth(a.handleLogout))
 	mux.HandleFunc("GET /api/me", a.auth(a.handleMe))
+	mux.HandleFunc("GET /api/events", a.auth(a.handleEvents))
 	mux.HandleFunc("GET /api/trips", a.auth(a.handleListTrips))
 	mux.HandleFunc("POST /api/trips", a.auth(a.handleCreateTrip))
 	mux.HandleFunc("GET /api/trips/{id}", a.auth(a.handleGetTrip))
@@ -95,7 +98,7 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) { writeError(w, 404, "Não encontrado") })
 	dist, _ := fs.Sub(webFS, "web/dist")
 	mux.Handle("/", spaHandler(dist))
-	return csrf(mux)
+	return csrf(a.notifyChanges(mux))
 }
 
 // csrf rejects writes without the custom header, which other sites' forms cannot send.
