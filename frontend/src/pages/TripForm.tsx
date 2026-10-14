@@ -3,12 +3,14 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, json } from '../api'
 import type { Trip, TripDetail } from '../types'
+import { BackBar, SaveCancel, useBack } from '../components/FormBar'
 
 const empty = { name: '', destination: '', start_date: '', end_date: '', notes: '' }
 
 export default function TripForm() {
   const { id } = useParams()
   const nav = useNavigate()
+  const back = useBack(id ? `/viagens/${id}` : '/')
   const qc = useQueryClient()
   const [form, setForm] = useState(empty)
   const [error, setError] = useState('')
@@ -43,8 +45,8 @@ export default function TripForm() {
   }
 
   return (
-    <main className="mx-auto max-w-xl px-4 pb-24 pt-6">
-      <button onClick={() => nav(-1)} className="mb-4 text-ink">Voltar</button>
+    <main className="mx-auto max-w-xl px-4 pb-24">
+      <BackBar label={id ? 'Viagem' : 'Viagens'} onBack={back} />
       <h1 className="board mb-6 text-3xl font-bold text-ink">{id ? 'Editar viagem' : 'Nova viagem'}</h1>
       <form onSubmit={submit} className="space-y-4">
         <label className="block">
@@ -70,7 +72,7 @@ export default function TripForm() {
           <textarea className="field" rows={3} value={form.notes} onChange={set('notes')} />
         </label>
         {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-        <button className="btn w-full">{id ? 'Salvar viagem' : 'Criar viagem'}</button>
+        <SaveCancel save={id ? 'Salvar' : 'Criar viagem'} onCancel={back} />
         {id && <button type="button" onClick={remove} className="btn btn-danger w-full">Apagar viagem</button>}
       </form>
     </main>

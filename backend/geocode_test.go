@@ -18,18 +18,42 @@ func fakeNominatim(t *testing.T, h http.HandlerFunc) string {
 func TestGeocode(t *testing.T) {
 	app, srv := newTestApp(t)
 	c := login(t, app, srv)
-	var gotUA, gotFormat, gotQ string
-	app.geocodeURL = fakeNominatim(t, func(w http.ResponseWriter, r *http.Request) {
-		gotUA, gotFormat, gotQ = r.UserAgent(), r.URL.Query().Get("format"), r.URL.Query().Get("q")
-		w.Write([]byte(`[{"display_name":"Rua A, Lisboa","lat":"38.7","lon":"-9.1"}]`))
+	var gotUA, gotQ, gotLat, gotLon string
+	app.photonURL = fakeNominatim(t, func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		gotUA, gotQ, gotLat, gotLon = r.UserAgent(), q.Get("q"), q.Get("lat"), q.Get("lon")
+		w.Write([]byte(`{"features":[
+			{"geometry":{"coordinates":[-9.13,38.71]},"properties":{"name":"Castelo de São Jorge","street":"Rua de Santa Cruz do Castelo","city":"Lisboa","country":"Portugal"}},
+			{"geometry":{"coordinates":[-9.14,38.72]},"properties":{"street":"Rua Augusta","housenumber":"10","city":"Lisboa","country":"Portugal"}},
+			{"geometry":{"coordinates":[-9.15,38.73]},"properties":{"name":"Lisboa","city":"Lisboa","state":"Lisboa","country":"Portugal"}}
+		]}`))
 	})
-	res := do(t, c, "GET", srv.URL+"/api/geocode?q=Rua+A", nil)
+	res := do(t, c, "GET", srv.URL+"/api/geocode?q=castelo&lat=38.7&lng=-9.1", nil)
 	got := decode[[]GeoResult](t, res)
-	if res.StatusCode != 200 || len(got) != 1 || got[0] != (GeoResult{Label: "Rua A, Lisboa", Lat: 38.7, Lng: -9.1}) {
+	want := []GeoResult{
+		{Label: "Castelo de São Jorge, Rua de Santa Cruz do Castelo, Lisboa, Portugal", Lat: 38.71, Lng: -9.13},
+		{Label: "Rua Augusta 10, Lisboa, Portugal", Lat: 38.72, Lng: -9.14},
+		{Label: "Lisboa, Portugal", Lat: 38.73, Lng: -9.15},
+	}
+	if res.StatusCode != 200 || len(got) != 3 || got[0] != want[0] || got[1] != want[1] || got[2] != want[2] {
 		t.Fatalf("%d %+v", res.StatusCode, got)
 	}
-	if gotUA != "viagens.app (self-hosted)" || gotFormat != "jsonv2" || gotQ != "Rua A" {
-		t.Fatalf("upstream got ua=%q format=%q q=%q", gotUA, gotFormat, gotQ)
+	if gotUA != "viagens.app (self-hosted)" || gotQ != "castelo" || gotLat != "38.7" || gotLon != "-9.1" {
+		t.Fatalf("upstream got ua=%q q=%q lat=%q lon=%q", gotUA, gotQ, gotLat, gotLon)
+	}
+}
+
+func TestGeocodeWithoutBias(t *testing.T) {
+	app, srv := newTestApp(t)
+	c := login(t, app, srv)
+	var hasLat bool
+	app.photonURL = fakeNominatim(t, func(w http.ResponseWriter, r *http.Request) {
+		hasLat = r.URL.Query().Has("lat")
+		w.Write([]byte(`{"features":[]}`))
+	})
+	res := do(t, c, "GET", srv.URL+"/api/geocode?q=x&lat=abc", nil)
+	if got := decode[[]GeoResult](t, res); res.StatusCode != 200 || len(got) != 0 || hasLat {
+		t.Fatalf("%d %v lat sent=%v", res.StatusCode, got, hasLat)
 	}
 }
 
@@ -44,7 +68,7 @@ func TestGeocodeEmptyQuery(t *testing.T) {
 func TestGeocodeUpstreamDown(t *testing.T) {
 	app, srv := newTestApp(t)
 	c := login(t, app, srv)
-	app.geocodeURL = fakeNominatim(t, func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(500) })
+	app.photonURL = fakeNominatim(t, func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(500) })
 	res := do(t, c, "GET", srv.URL+"/api/geocode?q=x", nil)
 	if body := decode[map[string]string](t, res); res.StatusCode != 502 || body["error"] != "Busca de endereço indisponível" {
 		t.Fatalf("%d %v", res.StatusCode, body)
@@ -54,7 +78,7 @@ func TestGeocodeUpstreamDown(t *testing.T) {
 func TestGeocodeUpstreamSlow(t *testing.T) {
 	app, srv := newTestApp(t)
 	c := login(t, app, srv)
-	app.geocodeURL = fakeNominatim(t, func(w http.ResponseWriter, r *http.Request) {
+	app.photonURL = fakeNominatim(t, func(w http.ResponseWriter, r *http.Request) {
 		select {
 		case <-time.After(6 * time.Second):
 		case <-r.Context().Done():

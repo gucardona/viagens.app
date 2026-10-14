@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, json } from '../api'
 import { KINDS } from '../kinds'
 import { mapLinks } from '../links'
 import TripMap, { type Extra } from '../components/TripMap'
 import Nearby from '../components/Nearby'
+import AddressSearch from '../components/AddressSearch'
+import { BackBar, SaveCancel, useBack } from '../components/FormBar'
+import { useExpenses } from './ExpensesTab'
+import { money } from '../money'
 import type { Attachment, Item, Kind, TripDetail } from '../types'
 
 type Form = Omit<Item, 'id' | 'trip_id' | 'created_at' | 'updated_at' | 'country_code' | 'area'>
-type GeoResult = { label: string; lat: number; lng: number }
 
 const empty: Form = {
   kind: 'activity', title: '', start_date: '', start_time: '', end_date: '', end_time: '',
@@ -18,7 +21,7 @@ const empty: Form = {
 
 const TICKETS: { value: Item['ticket']; label: string }[] = [
   { value: '', label: 'Não precisa' },
-  { value: 'needed', label: 'Precisa comprar' },
+  { value: 'needed', label: 'A comprar' },
   { value: 'bought', label: 'Comprado' },
 ]
 
@@ -33,11 +36,11 @@ export default function ItemSheet() {
 
   const [form, setForm] = useState<Form>(empty)
   const [error, setError] = useState('')
-  const [results, setResults] = useState<GeoResult[]>([])
-  const [searching, setSearching] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [extra, setExtra] = useState<Extra[]>([])
   const [params] = useSearchParams()
+  const { data: expenses } = useExpenses(id)
+  const spent = expenses?.expenses.filter((e) => String(e.item_id) === itemId) ?? []
 
   // Fill the form once per item; later refetches (upload, focus) must not overwrite unsaved edits.
   const loadedFor = useRef<string>()
@@ -56,21 +59,12 @@ export default function ItemSheet() {
   const pinItems = useMemo(() => (lat != null ? [{ ...empty, kind, lat, lng, id: 0, trip_id: 0 } as Item] : []), [lat, lng, kind])
   const links = mapLinks(form)
   const refresh = () => qc.invalidateQueries({ queryKey: ['trip', id] })
-
-  async function search() {
-    if (!form.address.trim()) return
-    setSearching(true)
-    setError('')
-    try {
-      const r = await api<GeoResult[]>(`/api/geocode?q=${encodeURIComponent(form.address)}`)
-      setResults(r)
-      if (!r.length) setError('Nenhum lugar encontrado. Toque no mapa para marcar o ponto.')
-    } catch (err) {
-      setError(`${(err as Error).message}. Toque no mapa para marcar o ponto.`)
-    } finally {
-      setSearching(false)
-    }
-  }
+  const back = useBack(`/viagens/${id}`)
+  const near = useMemo(() => {
+    const pins = data?.items.filter((i) => i.lat != null) ?? []
+    if (!pins.length) return undefined
+    return { lat: pins.reduce((s, i) => s + i.lat!, 0) / pins.length, lng: pins.reduce((s, i) => s + i.lng!, 0) / pins.length }
+  }, [data])
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -79,7 +73,7 @@ export default function ItemSheet() {
       const saved = await api<Item>(isNew ? `/api/trips/${id}/items` : `/api/items/${itemId}`, json(isNew ? 'POST' : 'PUT', form))
       await refresh()
       if (isNew) nav(`/viagens/${id}/itens/${saved.id}`, { replace: true })
-      else nav(-1)
+      else back()
     } catch (err) {
       setError((err as Error).message)
     }
@@ -116,8 +110,8 @@ export default function ItemSheet() {
   if (!isNew && data && !item) return <p className="p-6">Item não encontrado.</p>
 
   return (
-    <main className="mx-auto max-w-xl px-4 pb-24 pt-6">
-      <button onClick={() => nav(`/viagens/${id}`)} className="mb-4 text-ink">{data?.trip.name ?? 'Voltar'}</button>
+    <main className="mx-auto max-w-xl px-4 pb-24">
+      <BackBar label={data?.trip.name ?? 'Voltar'} onBack={back} />
       <form onSubmit={submit} className="space-y-4">
         <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Tipo">
           {(Object.keys(KINDS) as Kind[]).map((k) => (
@@ -164,19 +158,8 @@ export default function ItemSheet() {
 
         <div>
           <span className="mb-1 block text-sm text-muted">Endereço</span>
-          <div className="flex gap-2">
-            <input className="field" value={form.address} onChange={set('address')} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), search())} />
-            <button type="button" className="btn btn-quiet shrink-0" onClick={search} disabled={searching}>{searching ? 'Buscando…' : 'Buscar'}</button>
-          </div>
-          {results.length > 0 && (
-            <ul className="mt-2 divide-y divide-line rounded-lg border border-line bg-paper">
-              {results.map((r) => (
-                <li key={`${r.lat},${r.lng}`}>
-                  <button type="button" className="w-full p-3 text-left text-sm" onClick={() => (setForm({ ...form, address: r.label, lat: r.lat, lng: r.lng }), setResults([]))}>{r.label}</button>
-                </li>
-              ))}
-            </ul>
-          )}
+          <AddressSearch value={form.address} near={near} onChange={(address) => setForm((f) => ({ ...f, address }))}
+            onPick={(r) => setForm((f) => ({ ...f, address: r.label, lat: r.lat, lng: r.lng }))} />
           <p className="mt-2 text-sm text-muted">Toque no mapa para colocar ou mover o pin.</p>
           <TripMap items={pinItems} extra={extra} onPick={(p) => setForm((f) => ({ ...f, ...p }))} className="mt-1 h-56" />
           <div className="mt-2 flex flex-wrap gap-2 text-sm">
@@ -214,8 +197,20 @@ export default function ItemSheet() {
           </div>
         )}
 
+        {!isNew && (
+          <div>
+            <span className="mb-1 block text-sm text-muted">Gastos</span>
+            {spent.map((e) => (
+              <Link key={e.id} to={`/viagens/${id}/gastos/${e.id}`} className="mb-1 flex justify-between rounded-lg bg-paper p-3">
+                <span className="truncate">{e.title}</span><span className="board text-lg text-ink">{money(e.amount_cents, e.currency)}</span>
+              </Link>
+            ))}
+            <Link to={`/viagens/${id}/gastos/novo?item=${itemId}`} className="btn btn-quiet inline-block">+ Adicionar gasto</Link>
+          </div>
+        )}
+
         {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-        <button className="btn w-full">{isNew ? 'Criar item' : 'Salvar item'}</button>
+        <SaveCancel save={isNew ? 'Criar item' : 'Salvar'} onCancel={back} />
         {isNew && <p className="text-center text-sm text-muted">Depois de criar, você pode anexar documentos.</p>}
         {!isNew && <button type="button" onClick={remove} className="btn btn-danger w-full">Apagar item</button>}
       </form>

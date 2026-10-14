@@ -21,6 +21,9 @@ func spaHandler(fsys fs.FS) http.Handler {
 			http.ServeFileFS(w, r, fsys, "index.html")
 			return
 		}
+		if name == "sw.js" {
+			w.Header().Set("Cache-Control", "no-cache")
+		}
 		files.ServeHTTP(w, r)
 	})
 }

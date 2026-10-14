@@ -121,10 +121,10 @@ export default function SavedTab({ data }: { data: TripDetail }) {
 
   return (
     <div className="mt-2">
-      <div className="flex flex-wrap gap-2">
-        <Link to={`/viagens/${data.trip.id}/itens/novo?salvo=1`} className="btn">+ Lugar</Link>
-        <button type="button" className="btn btn-quiet" onClick={pasteLink}>Colar link</button>
-        <button type="button" className="btn btn-quiet" onClick={() => setImporting(true)}>Importar do Google</button>
+      <div className="grid grid-cols-3 gap-2 text-sm">
+        <Link to={`/viagens/${data.trip.id}/itens/novo?salvo=1`} className="btn px-2">+ Lugar</Link>
+        <button type="button" className="btn btn-quiet px-2" onClick={pasteLink}>Colar link</button>
+        <button type="button" className="btn btn-quiet px-2" onClick={() => setImporting(true)}>Importar</button>
       </div>
       {msg && <p role="status" className="mt-2 text-sm">{msg}</p>}
       {importing && <ImportDialog tripId={data.trip.id} onClose={() => setImporting(false)} />}

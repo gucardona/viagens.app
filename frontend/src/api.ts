@@ -2,7 +2,9 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
   headers.set('X-Requested-With', 'viagens')
   if (init.body && !(init.body instanceof FormData)) headers.set('Content-Type', 'application/json')
-  const res = await fetch(path, { ...init, headers, credentials: 'same-origin' })
+  const res = await fetch(path, { ...init, headers, credentials: 'same-origin' }).catch(() => {
+    throw new Error('Sem internet. Tente de novo quando estiver online.')
+  })
   if (res.status === 401 && location.pathname !== '/login') {
     location.assign('/login')
     return new Promise<T>(() => {})
