@@ -133,7 +133,7 @@ export default function SavedTab({ data }: { data: TripDetail }) {
         <p className="mt-10 text-center text-muted">Nenhum lugar salvo ainda. Itens sem data, importados do Google ou colados por link aparecem aqui.</p>
       ) : (
         <>
-          {pinned.length > 0 && <TripMap items={pinned} colors={colors} className="mt-4 h-64" />}
+          {pinned.length > 0 && <TripMap items={pinned} colors={colors} cluster className="mt-4 h-64" />}
           <label className="mt-3 flex items-center gap-3 text-sm">
             <span className="shrink-0 text-muted">Agrupar a até</span>
             <input type="range" min={0.5} max={3} step={0.5} value={km} onChange={(e) => setKm(Number(e.target.value))} className="flex-1" />

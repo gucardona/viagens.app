@@ -35,7 +35,7 @@ export default function TripMapTab({ data }: { data: TripDetail }) {
         ))}
       </div>
       {!hasPins && <p className="mb-2 text-sm text-muted">Nenhum item com local ainda. Abra um item e toque no mapa para marcar onde ele fica.</p>}
-      <TripMap items={items} line={day !== null} numbers={numbers} onSelect={onSelect} onMove={setCenter} extra={extra} geolocate className="h-[55dvh]" />
+      <TripMap items={items} line={day !== null} numbers={numbers} onSelect={onSelect} onMove={setCenter} extra={extra} geolocate cluster={day === null} className="h-[55dvh]" />
       {hasPins && day && items.length === 0 && <p className="mt-2 text-sm text-muted">Nenhum item com local neste dia.</p>}
       <div className="mt-3">
         <Nearby center={center} data={data} onPins={setExtra} />
