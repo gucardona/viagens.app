@@ -35,6 +35,7 @@ self.addEventListener('fetch', (e) => {
   const req = e.request
   const url = new URL(req.url)
   if (req.method !== 'GET' || url.origin !== location.origin) return
+  if (url.pathname === '/api/events') return // live stream: never cache
   if (req.mode === 'navigate') return e.respondWith(networkFirst(req, SHELL, '/'))
   if (url.pathname.startsWith('/api/attachments/')) return e.respondWith(cacheFirst(req, DATA))
   if (url.pathname.startsWith('/api/')) return e.respondWith(networkFirst(req, DATA))
