@@ -34,6 +34,7 @@ type App struct {
 	nearby       *nearbyCache
 	linkClient   *http.Client
 	ratesURL     string
+	photonURL    string
 }
 
 func newApp(dataDir string, cookieSecure bool) (*App, error) {
@@ -57,6 +58,7 @@ func newApp(dataDir string, cookieSecure bool) (*App, error) {
 		nearby:       &nearbyCache{data: map[string]nearbyEntry{}},
 		linkClient:   &http.Client{Timeout: 5 * time.Second},
 		ratesURL:     "https://api.frankfurter.app",
+		photonURL:    "https://photon.komoot.io/api/",
 	}, nil
 }
 
