@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
 	"database/sql"
@@ -38,6 +39,7 @@ type App struct {
 	photonURL    string
 	events       *hub
 	anthropicURL string
+	secret       cipher.AEAD
 }
 
 func newApp(dataDir string, cookieSecure bool) (*App, error) {
@@ -48,7 +50,12 @@ func newApp(dataDir string, cookieSecure bool) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &App{
+	secret, err := loadSecret(dataDir)
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
+	app := &App{
 		db:           db,
 		dataDir:      dataDir,
 		cookieSecure: cookieSecure,
@@ -65,7 +72,13 @@ func newApp(dataDir string, cookieSecure bool) (*App, error) {
 		photonURL:    "https://photon.komoot.io/api/",
 		events:       &hub{subs: map[chan struct{}]struct{}{}},
 		anthropicURL: "https://api.anthropic.com/v1/messages",
-	}, nil
+		secret:       secret,
+	}
+	if err := app.sealOldKeys(); err != nil {
+		db.Close()
+		return nil, err
+	}
+	return app, nil
 }
 
 func (a *App) routes() http.Handler {
