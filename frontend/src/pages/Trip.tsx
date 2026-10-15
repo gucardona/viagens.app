@@ -12,6 +12,7 @@ import ExpensesTab from './ExpensesTab'
 import MoreTab from './MoreTab'
 import OfflineBar from '../components/OfflineBar'
 import SavedTab from './SavedTab'
+import ChatTab from './ChatTab'
 
 const weekday = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', timeZone: 'UTC' })
 const month = new Intl.DateTimeFormat('pt-BR', { month: 'long', timeZone: 'UTC' })
@@ -114,6 +115,7 @@ const TABS = [
   { key: 'salvos', label: 'Salvos' },
   { key: 'mapa', label: 'Mapa' },
   { key: 'gastos', label: 'Gastos' },
+  { key: 'chat', label: 'Chat' },
   { key: 'mais', label: 'Mais' },
 ] as const
 
@@ -153,6 +155,7 @@ export default function Trip() {
       {tab === 'salvos' && <SavedTab data={data} />}
       {tab === 'mapa' && <TripMapTab data={data} />}
       {tab === 'gastos' && <ExpensesTab data={data} />}
+      {tab === 'chat' && <ChatTab tripId={data.trip.id} />}
       {tab === 'mais' && <MoreTab data={data} />}
 
       {tab === 'roteiro' && (
