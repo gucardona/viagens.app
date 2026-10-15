@@ -18,6 +18,7 @@ type Trip struct {
 	CreatedAt   string   `json:"created_at"`
 	UpdatedAt   string   `json:"updated_at"`
 	Countries   []string `json:"countries,omitempty"`
+	ShareToken  string   `json:"share_token,omitempty"`
 }
 
 type TripDetail struct {
@@ -58,11 +59,11 @@ func (in *tripInput) validate() string {
 	return ""
 }
 
-const tripCols = `id, name, destination, start_date, end_date, notes, created_at, updated_at`
+const tripCols = `id, name, destination, start_date, end_date, notes, created_at, updated_at, COALESCE(share_token, '')`
 
 func scanTrip(row interface{ Scan(...any) error }) (Trip, error) {
 	var t Trip
-	err := row.Scan(&t.ID, &t.Name, &t.Destination, &t.StartDate, &t.EndDate, &t.Notes, &t.CreatedAt, &t.UpdatedAt)
+	err := row.Scan(&t.ID, &t.Name, &t.Destination, &t.StartDate, &t.EndDate, &t.Notes, &t.CreatedAt, &t.UpdatedAt, &t.ShareToken)
 	return t, err
 }
 

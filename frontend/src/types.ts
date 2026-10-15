@@ -10,6 +10,7 @@ export type Trip = {
   created_at: string
   updated_at: string
   countries?: string[]
+  share_token?: string
 }
 
 export type Item = {

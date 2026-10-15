@@ -16,7 +16,7 @@ import SavedTab from './SavedTab'
 const weekday = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', timeZone: 'UTC' })
 const month = new Intl.DateTimeFormat('pt-BR', { month: 'long', timeZone: 'UTC' })
 
-function DayHeader({ date }: { date: string | null }) {
+export function DayHeader({ date }: { date: string | null }) {
   if (!date) return <h2 className="board text-3xl font-bold text-ink">Sem data</h2>
   const d = new Date(date + 'T00:00:00Z')
   return (
@@ -27,18 +27,21 @@ function DayHeader({ date }: { date: string | null }) {
   )
 }
 
+const ROW = 'flex gap-3 rounded-lg bg-paper p-3'
+
 const TICKET = {
   needed: { label: '🎫 comprar', className: 'bg-signal/40 text-ink' },
   bought: { label: '🎫 comprado', className: 'bg-green-100 text-green-800' },
 }
 
-function Day({ day, tripId }: { day: DayGroup; tripId: string }) {
+// Without tripId (shared link) the day is read-only: no links to items or to the big map.
+export function Day({ day, tripId }: { day: DayGroup; tripId?: string }) {
   const numbers = useMemo(() => pinNumbers(day.items), [day.items])
   const pinned = useMemo(() => day.items.filter((i) => i.lat != null), [day.items])
   return (
     <section className="py-5">
       <DayHeader date={day.date} />
-      {day.date && pinned.length > 0 && <DayMap items={pinned} numbers={numbers} to={`/viagens/${tripId}?aba=mapa&dia=${day.date}`} />}
+      {day.date && pinned.length > 0 && <DayMap items={pinned} numbers={numbers} to={tripId && `/viagens/${tripId}?aba=mapa&dia=${day.date}`} />}
       {day.items.length === 0 ? (
         <p className="mt-2 text-sm text-muted">Nada planejado.</p>
       ) : (
@@ -47,23 +50,30 @@ function Day({ day, tripId }: { day: DayGroup; tripId: string }) {
             const checkout = day.date && i.kind === 'lodging' && day.date !== i.start_date
             const [start, until] = (day.date ? timeLabel(i, day.date) : '').split('–')
             const n = numbers.get(i.id)
+            const row = (
+              <>
+                <span className={`board w-14 shrink-0 pt-0.5 text-lg ${i.time_approx ? 'text-muted' : 'text-ink'}`}>{start || '—'}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold">
+                    <span aria-hidden>{KINDS[i.kind].emoji} </span>
+                    {checkout ? `Check-out: ${i.title}` : i.title}{(i as { pending?: boolean }).pending && <span className="ml-1 text-xs font-normal text-muted">⏳ esperando internet</span>}
+                  </span>
+                  {until && <span className="board block text-ink">até {until}</span>}
+                  {i.address && <span className="block truncate text-sm text-muted">{i.address}</span>}
+                  {i.ticket && <span className={`mt-1 inline-block rounded px-1.5 text-sm font-semibold ${TICKET[i.ticket].className}`}>{TICKET[i.ticket].label}</span>}
+                </span>
+                {n && (
+                  <span className="board grid h-6 w-6 shrink-0 place-items-center rounded-full text-sm font-bold text-white" style={{ background: KINDS[i.kind].color }} aria-label={`Ponto ${n} no mapa`}>{n}</span>
+                )}
+              </>
+            )
             return (
               <li key={`${i.id}-${day.date}`}>
-                <Link to={`/viagens/${tripId}/itens/${i.id}`} className="flex gap-3 rounded-lg bg-paper p-3" style={{ borderLeft: `4px solid ${KINDS[i.kind].color}` }}>
-                  <span className={`board w-14 shrink-0 pt-0.5 text-lg ${i.time_approx ? 'text-muted' : 'text-ink'}`}>{start || '—'}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-semibold">
-                      <span aria-hidden>{KINDS[i.kind].emoji} </span>
-                      {checkout ? `Check-out: ${i.title}` : i.title}{(i as { pending?: boolean }).pending && <span className="ml-1 text-xs font-normal text-muted">⏳ esperando internet</span>}
-                    </span>
-                    {until && <span className="board block text-ink">até {until}</span>}
-                    {i.address && <span className="block truncate text-sm text-muted">{i.address}</span>}
-                    {i.ticket && <span className={`mt-1 inline-block rounded px-1.5 text-sm font-semibold ${TICKET[i.ticket].className}`}>{TICKET[i.ticket].label}</span>}
-                  </span>
-                  {n && (
-                    <span className="board grid h-6 w-6 shrink-0 place-items-center rounded-full text-sm font-bold text-white" style={{ background: KINDS[i.kind].color }} aria-label={`Ponto ${n} no mapa`}>{n}</span>
-                  )}
-                </Link>
+                {tripId ? (
+                  <Link to={`/viagens/${tripId}/itens/${i.id}`} className={ROW} style={{ borderLeft: `4px solid ${KINDS[i.kind].color}` }}>{row}</Link>
+                ) : (
+                  <div className={ROW} style={{ borderLeft: `4px solid ${KINDS[i.kind].color}` }}>{row}</div>
+                )}
               </li>
             )
           })}
