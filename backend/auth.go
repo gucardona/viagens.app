@@ -92,6 +92,7 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("POST /api/trips/{id}/expenses", a.auth(a.handleCreateExpense))
 	mux.HandleFunc("PUT /api/expenses/{id}", a.auth(a.handleUpdateExpense))
 	mux.HandleFunc("DELETE /api/expenses/{id}", a.auth(a.handleDeleteExpense))
+	mux.HandleFunc("GET /api/trips/{id}/calendar.ics", a.auth(a.handleCalendar))
 	mux.HandleFunc("GET /api/trips/{id}/checklist", a.auth(a.handleListChecklist))
 	mux.HandleFunc("POST /api/trips/{id}/checklist", a.auth(a.handleAddChecklist))
 	mux.HandleFunc("POST /api/trips/{id}/checklist/copy", a.auth(a.handleCopyChecklist))
