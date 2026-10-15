@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { offlineInfo, saveTripOffline, type OfflineInfo } from '../offline'
 import type { TripDetail } from '../types'
+import { clearErrors, outboxErrors, pending, subscribe } from '../outbox'
 
 const when = (iso: string) => new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
 const mb = (b: number) => `${(b / 1048576).toFixed(1).replace('.', ',')} MB`
@@ -43,12 +44,32 @@ export default function OfflineBar({ data }: { data: TripDetail }) {
     }
   }
 
+  const waiting = useSyncExternalStore(subscribe, () => pending().length)
+  const refused = useSyncExternalStore(subscribe, outboxErrors)
+  const outbox = (
+    <>
+      {waiting > 0 && <p role="status" className="mb-1 font-semibold text-ink">⏳ {waiting === 1 ? '1 alteração esperando' : `${waiting} alterações esperando`} internet</p>}
+      {refused.length > 0 && (
+        <p role="alert" className="mb-1 text-red-700">
+          {refused.length === 1 ? '1 alteração não pôde ser salva' : `${refused.length} alterações não puderam ser salvas`}: {refused.join('; ')}.{' '}
+          <button type="button" className="underline" onClick={clearErrors}>OK</button>
+        </p>
+      )}
+    </>
+  )
+
   if (!online) {
-    return <p role="status" className="mb-3 rounded-lg bg-signal/40 p-2 text-sm text-ink">Sem internet{info ? `: mostrando a cópia de ${when(info.at)}` : ''}. Para salvar mudanças, precisa de internet.</p>
+    return (
+      <div role="status" className="mb-3 rounded-lg bg-signal/40 p-2 text-sm text-ink">
+        {outbox}
+        <p>Sem internet{info ? `: mostrando a cópia de ${when(info.at)}` : ''}. Itens, gastos e checklist salvos agora vão quando a internet voltar.</p>
+      </div>
+    )
   }
-  if (!('caches' in window)) return null
+  if (!('caches' in window)) return <div className="mb-3 text-sm">{outbox}</div>
   return (
     <div className="mb-3 text-sm">
+      {outbox}
       {info ? (
         <p className="text-muted">✓ Disponível offline · {info.files} documentos · {mb(info.bytes)} · {when(info.at)}</p>
       ) : (

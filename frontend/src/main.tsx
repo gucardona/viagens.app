@@ -11,7 +11,8 @@ import ItemSheet from './pages/ItemSheet'
 import ExpenseForm from './pages/ExpenseForm'
 import { Live } from './live'
 
-const queryClient = new QueryClient({ defaultOptions: { queries: { refetchOnWindowFocus: true, retry: false } } })
+// networkMode 'always': offline reads come from the service worker's copy plus the outbox.
+const queryClient = new QueryClient({ defaultOptions: { queries: { refetchOnWindowFocus: true, retry: false, networkMode: 'always' } } })
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js')
 
