@@ -3,9 +3,10 @@ import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { KINDS } from '../kinds'
 import { groupNear } from '../cluster'
+import { GOOGLE_PROTOCOL, STYLE } from '../mapStyle'
 import type { Item } from '../types'
 
-const STYLE = 'https://tiles.openfreemap.org/styles/liberty'
+if (GOOGLE_PROTOCOL) maplibregl.addProtocol('gmaps', GOOGLE_PROTOCOL)
 
 type Props = {
   items: Item[]

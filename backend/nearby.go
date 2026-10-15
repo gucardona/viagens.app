@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -67,8 +68,9 @@ func (a *App) handleNearby(w http.ResponseWriter, r *http.Request) {
 
 	f := func(v float64) string { return strconv.FormatFloat(v, 'f', -1, 64) }
 	query := "[out:json][timeout:10];" + fmt.Sprintf(filter, f(lat), f(lng)) + "out center 80;"
-	req, _ := http.NewRequestWithContext(r.Context(), "POST", a.overpassURL, nil)
-	req.URL.RawQuery = url.Values{"data": {query}}.Encode()
+	// Overpass ignores the URL query on POST: the query must go in a form body.
+	req, _ := http.NewRequestWithContext(r.Context(), "POST", a.overpassURL, strings.NewReader(url.Values{"data": {query}}.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("User-Agent", "viagens.app (self-hosted)")
 	var body struct {
 		Elements []struct {

@@ -12,8 +12,9 @@ func fakeOverpass(t *testing.T, app *App, status int, body string) (*atomic.Int3
 	var query string
 	app.overpassURL = fakeNominatim(t, func(w http.ResponseWriter, r *http.Request) {
 		calls.Add(1)
+		// Overpass reads a POST query only from the body, never from the URL.
 		r.ParseForm()
-		query = r.Form.Get("data")
+		query = r.PostForm.Get("data")
 		w.WriteHeader(status)
 		w.Write([]byte(body))
 	})

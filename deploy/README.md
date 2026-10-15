@@ -71,6 +71,27 @@ O comando `backup` grava uma cópia consistente do banco mesmo com o app rodando
 
 Para restaurar: pare o app (`docker compose stop app`), copie `backup.db` para `data/viagens.db`, devolva a pasta `files/` e suba de novo.
 
+## 7. Mapa do Google (opcional)
+
+O mapa usa OpenStreetMap (OpenFreeMap) por padrão. Para trocar pelo Google, o app pede os quadradinhos do mapa à **Map Tiles API** do Google; todo o resto (pins, bolinhas, linha do roteiro, busca por perto) continua igual. A troca é na hora do build, por duas variáveis.
+
+1. Em <https://console.cloud.google.com>, crie um projeto (ex.: `viagens`) e ative o faturamento nele. O Google pede cartão, mas o uso de duas pessoas fica dentro da cota grátis mensal da Map Tiles API.
+2. Em **APIs e serviços > Biblioteca**, ative a **Map Tiles API**.
+3. Em **APIs e serviços > Credenciais > Criar credenciais > Chave de API**, copie a chave.
+4. Na mesma chave, em **Restrições**:
+   - **Restrições de aplicativo**: *Sites*, com `https://viagens.gupa.dev/*` (e `http://localhost:5173/*` se for testar local).
+   - **Restrições de API**: só a **Map Tiles API**.
+   A chave vai no código do site e qualquer um pode vê-la; são essas restrições que impedem o uso fora do app.
+5. Opcional: em **Cotas**, limite as requisições por dia da Map Tiles API para nunca passar da cota grátis.
+6. Na VPS, crie (ou complete) o arquivo `deploy/.env`, que não vai para o git:
+   ```sh
+   VITE_MAP_PROVIDER=google
+   VITE_GOOGLE_MAPS_KEY=sua-chave
+   ```
+7. Rode `docker compose up -d --build` (ou espere o próximo deploy automático).
+
+Para voltar ao OpenStreetMap, troque para `VITE_MAP_PROVIDER=osm` (ou apague a linha) e faça o build de novo. Local, as mesmas linhas vão em `frontend/.env.local` antes do `npm run dev`.
+
 ## Rodar localmente
 
 ```sh

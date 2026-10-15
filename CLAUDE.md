@@ -6,7 +6,7 @@ App privado de viagens para duas pessoas. Plano do produto em `docs/plano-app-vi
 
 - Todo trabalho novo segue o Superpowers: brainstorming → spec em `docs/superpowers/specs/` → plano em `docs/superpowers/plans/` → TDD.
 - Código segue o Ponytail (nível full): a menor mudança que resolve tudo, biblioteca padrão antes de dependência, sem opções ou abstrações que ninguém pediu. Limites conhecidos ficam marcados com `// shortcut: <limite>, <quando mudar>`.
-- Nenhuma API paga (decisão do Gustavo): mapas e busca usam OpenStreetMap (OpenFreeMap, Nominatim).
+- Nenhuma API paga (decisão do Gustavo): mapas e busca usam OpenStreetMap (OpenFreeMap, Nominatim). O mapa do Google é opcional, ligado no build (`VITE_MAP_PROVIDER=google`, ver `deploy/README.md`).
 - Interface em português, mobile-first. Código, nomes e commits técnicos podem ser em inglês; mensagens ao usuário sempre em português.
 
 ## Comandos
