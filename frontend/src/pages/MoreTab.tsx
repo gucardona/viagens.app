@@ -19,13 +19,13 @@ function ShareLink({ trip }: { trip: Trip }) {
   }
   return (
     <section>
-      <h2 className="board text-3xl font-bold text-ink">Link para a família</h2>
+      <h2 className="board text-3xl font-bold text-ink">Compartilhar viagem</h2>
       <p className="my-3 text-sm text-muted">
         Quem tiver o link vê o roteiro e os mapas, sem login e sem poder mudar nada. Códigos de reserva, observações, documentos e gastos ficam de fora.
       </p>
       {url ? (
         <>
-          <input className="field w-full" readOnly value={url} onFocus={(e) => e.target.select()} aria-label="Link para a família" />
+          <input className="field w-full" readOnly value={url} onFocus={(e) => e.target.select()} aria-label="Link da viagem" />
           <div className="mt-2 flex flex-wrap gap-2">
             <button className="btn" onClick={send}>Enviar link</button>
             <button className="btn btn-quiet" onClick={() => confirm('Desativar o link? Quem tem o link antigo deixa de ver o roteiro.') && call('DELETE')}>Desativar link</button>

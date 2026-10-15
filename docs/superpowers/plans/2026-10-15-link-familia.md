@@ -1,4 +1,4 @@
-# Plano: link para a família
+# Plano: compartilhar viagem
 
 Spec: `docs/superpowers/specs/2026-10-15-link-familia-design.md`.
 

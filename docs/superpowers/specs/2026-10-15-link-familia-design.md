@@ -1,10 +1,10 @@
-# Link de leitura para a família
+# Compartilhar viagem (link de leitura)
 
 Item da V2 do plano ("compartilhar roteiro somente leitura com família").
 
 ## O que o usuário vê
 
-- Aba "Mais" da viagem, seção "Link para a família": "Criar link". Depois de criado: o link num campo, "Enviar link" (menu de compartilhar do celular; no computador copia) e "Desativar link" (com confirmação).
+- Aba "Mais" da viagem, seção "Compartilhar viagem": "Criar link". Depois de criado: o link num campo, "Enviar link" (menu de compartilhar do celular; no computador copia) e "Desativar link" (com confirmação).
 - Quem abre `/compartilhado/<token>` vê, sem login, o nome da viagem, destino e bandeiras, e os dias com horários, endereços, status do ingresso e o mapinha de cada dia. Nada é clicável para editar.
 
 ## O que fica de fora
