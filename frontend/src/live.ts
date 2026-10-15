@@ -7,7 +7,8 @@ import { send } from './outbox'
 // After a dropped connection (tunnel, plane) the browser reconnects and we refetch everything.
 export function useLive() {
   const qc = useQueryClient()
-  const off = useLocation().pathname === '/login'
+  const path = useLocation().pathname
+  const off = path === '/login' || path.startsWith('/compartilhado/') // no session there
   useEffect(() => {
     if (off) return
     // Send what was saved without internet, then show the server's version.

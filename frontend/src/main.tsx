@@ -9,6 +9,7 @@ import TripForm from './pages/TripForm'
 import Trip from './pages/Trip'
 import ItemSheet from './pages/ItemSheet'
 import ExpenseForm from './pages/ExpenseForm'
+import Shared from './pages/Shared'
 import { Live } from './live'
 
 // networkMode 'always': offline reads come from the service worker's copy plus the outbox.
@@ -29,6 +30,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/viagens/:id/editar" element={<TripForm />} />
           <Route path="/viagens/:id/itens/:itemId" element={<ItemSheet />} />
           <Route path="/viagens/:id/gastos/:expenseId" element={<ExpenseForm />} />
+          <Route path="/compartilhado/:token" element={<Shared />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
