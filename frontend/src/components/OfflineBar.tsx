@@ -30,7 +30,8 @@ export default function OfflineBar({ data }: { data: TripDetail }) {
     if (online && offlineInfo(data.trip.id) && 'caches' in window) {
       saveTripOffline(data.trip.id, data.attachments).then(setInfo).catch(() => {})
     }
-  }, [online, data])
+    // Keyed on the trip and its documents, not on every refetch (live updates refetch often).
+  }, [online, data.trip.id, data.attachments.length])
 
   async function save() {
     setBusy(true)

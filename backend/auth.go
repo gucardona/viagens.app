@@ -26,6 +26,7 @@ type App struct {
 	dataDir      string
 	cookieSecure bool
 	logins       *loginLimiter
+	rates        *rateMemo
 	geocodeURL   string
 	geoGate      *rateGate
 	reverseURL   string
@@ -51,6 +52,7 @@ func newApp(dataDir string, cookieSecure bool) (*App, error) {
 		dataDir:      dataDir,
 		cookieSecure: cookieSecure,
 		logins:       &loginLimiter{fails: map[string][]time.Time{}},
+		rates:        &rateMemo{m: map[string]memoRate{}},
 		geocodeURL:   "https://nominatim.openstreetmap.org/search",
 		geoGate:      &rateGate{every: time.Second},
 		reverseURL:   "https://nominatim.openstreetmap.org/reverse",
@@ -136,21 +138,24 @@ func (a *App) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	email := strings.ToLower(strings.TrimSpace(in.Email))
-	if a.logins.blocked(email) {
+	if !a.logins.try(email) {
 		writeError(w, 429, "Muitas tentativas. Tente de novo em alguns minutos")
 		return
 	}
 	var id int64
 	var hash string
 	err := a.db.QueryRow(`SELECT id, password_hash FROM users WHERE email = ?`, email).Scan(&id, &hash)
-	if err == nil {
+	if err != nil {
+		// Same bcrypt cost for unknown e-mails, so timing doesn't tell which accounts exist.
+		bcrypt.CompareHashAndPassword(dummyHash(), []byte(in.Password))
+	} else {
 		err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(in.Password))
 	}
 	if err != nil {
-		a.logins.fail(email)
 		writeError(w, 401, "E-mail ou senha incorretos")
 		return
 	}
+	a.logins.ok(email)
 	b := make([]byte, 32)
 	rand.Read(b)
 	tok := base64.RawURLEncoding.EncodeToString(b)
@@ -215,6 +220,11 @@ type loginLimiter struct {
 
 const loginWindow, loginMaxFails = 15 * time.Minute, 5
 
+var dummyHash = sync.OnceValue(func() []byte {
+	h, _ := bcrypt.GenerateFromPassword([]byte("dummy"), bcrypt.DefaultCost)
+	return h
+})
+
 func (l *loginLimiter) recent(email string) []time.Time {
 	var keep []time.Time
 	for _, t := range l.fails[email] {
@@ -222,18 +232,28 @@ func (l *loginLimiter) recent(email string) []time.Time {
 			keep = append(keep, t)
 		}
 	}
-	l.fails[email] = keep
+	if keep == nil {
+		delete(l.fails, email)
+	} else {
+		l.fails[email] = keep
+	}
 	return keep
 }
 
-func (l *loginLimiter) blocked(email string) bool {
+// try counts the attempt as a failure up front, under one lock, so parallel
+// requests can't all pass the check before any of them fails.
+func (l *loginLimiter) try(email string) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	return len(l.recent(email)) >= loginMaxFails
+	if len(l.recent(email)) >= loginMaxFails {
+		return false
+	}
+	l.fails[email] = append(l.fails[email], time.Now())
+	return true
 }
 
-func (l *loginLimiter) fail(email string) {
+func (l *loginLimiter) ok(email string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	l.fails[email] = append(l.recent(email), time.Now())
+	delete(l.fails, email)
 }

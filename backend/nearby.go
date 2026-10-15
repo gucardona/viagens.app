@@ -52,7 +52,7 @@ func (a *App) handleNearby(w http.ResponseWriter, r *http.Request) {
 	filter, ok := nearbyFilters[q.Get("what")]
 	lat, err1 := strconv.ParseFloat(q.Get("lat"), 64)
 	lng, err2 := strconv.ParseFloat(q.Get("lng"), 64)
-	if !ok || err1 != nil || err2 != nil || lat < -90 || lat > 90 || lng < -180 || lng > 180 {
+	if !ok || err1 != nil || err2 != nil || math.IsNaN(lat) || math.IsNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180 {
 		writeError(w, 400, "Busca inválida")
 		return
 	}

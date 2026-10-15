@@ -66,7 +66,7 @@ func TestNearbyCache(t *testing.T) {
 func TestNearbyBadInput(t *testing.T) {
 	app, srv := newTestApp(t)
 	c := login(t, app, srv)
-	for _, q := range []string{"lat=38.7&lng=-9.1&what=x", "lat=abc&lng=-9.1&what=toilets", "lat=95&lng=-9.1&what=toilets"} {
+	for _, q := range []string{"lat=38.7&lng=-9.1&what=x", "lat=abc&lng=-9.1&what=toilets", "lat=95&lng=-9.1&what=toilets", "lat=NaN&lng=NaN&what=toilets"} {
 		if res := do(t, c, "GET", srv.URL+"/api/nearby?"+q, nil); res.StatusCode != 400 {
 			t.Errorf("%s: %d", q, res.StatusCode)
 		}

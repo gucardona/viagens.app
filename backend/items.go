@@ -176,8 +176,12 @@ func (a *App) handleUpdateItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if _, err := a.db.Exec(`UPDATE items SET kind = ?, title = ?, start_date = ?, start_time = ?, end_date = ?, end_time = ?,
-		address = ?, lat = ?, lng = ?, confirmation_code = ?, notes = ?, ticket = ?, time_approx = ?, updated_at = datetime('now') WHERE id = ?`,
-		in.Kind, in.Title, in.StartDate, in.StartTime, in.EndDate, in.EndTime, in.Address, in.Lat, in.Lng, in.ConfirmationCode, in.Notes, in.Ticket, in.TimeApprox, id); err != nil {
+		address = ?, lat = ?, lng = ?, confirmation_code = ?, notes = ?, ticket = ?, time_approx = ?, updated_at = datetime('now'),
+		country_code = CASE WHEN lat IS ? AND lng IS ? THEN country_code ELSE '' END,
+		area = CASE WHEN lat IS ? AND lng IS ? THEN area ELSE '' END,
+		geo_key = CASE WHEN lat IS ? AND lng IS ? THEN geo_key ELSE '' END WHERE id = ?`,
+		in.Kind, in.Title, in.StartDate, in.StartTime, in.EndDate, in.EndTime, in.Address, in.Lat, in.Lng, in.ConfirmationCode, in.Notes, in.Ticket, in.TimeApprox,
+		in.Lat, in.Lng, in.Lat, in.Lng, in.Lat, in.Lng, id); err != nil {
 		serverError(w, err)
 		return
 	}

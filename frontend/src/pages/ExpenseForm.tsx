@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { useParams, useSearchParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, json } from '../api'
 import { CATEGORIES, categoryFor, parseMoney, type Category } from '../money'
 import { useExpenses, useUsers } from './ExpensesTab'
 import { BackBar, SaveCancel, useBack } from '../components/FormBar'
+import { knownIds } from '../outbox'
 import type { Expense, TripDetail } from '../types'
 
 const CURRENCIES = ['BRL', 'EUR', 'USD', 'GBP', 'CHF', 'JPY', 'ARS', 'CLP', 'MXN', 'CAD', 'AUD']
@@ -15,6 +16,7 @@ export default function ExpenseForm() {
   const { id = '', expenseId = 'novo' } = useParams()
   const [params] = useSearchParams()
   const isNew = expenseId === 'novo'
+  const nav = useNavigate()
   const qc = useQueryClient()
   const { data: trip } = useQuery({ queryKey: ['trip', id], queryFn: () => api<TripDetail>(`/api/trips/${id}`) })
   const { data: s } = useExpenses(id)
@@ -32,6 +34,13 @@ export default function ExpenseForm() {
   const [rate, setRate] = useState('')
   const [itemId, setItemId] = useState<number | null>(null)
   const [error, setError] = useState('')
+  const [otherShare, setOtherShare] = useState(false)
+  const back = useBack(`/viagens/${id}?aba=gastos`)
+  // An expense created offline was just sent: move to its real id.
+  const synced = !existing && Number(expenseId) < 0 ? knownIds()[expenseId] : undefined
+  useEffect(() => {
+    if (synced != null) nav(`/viagens/${id}/gastos/${synced}`, { replace: true })
+  }, [synced, id, nav])
 
   const loaded = useRef(false)
   useEffect(() => {
@@ -81,9 +90,7 @@ export default function ExpenseForm() {
     back()
   }
 
-  if (!isNew && s && !existing) return <p className="p-6">Gasto não encontrado.</p>
-  const back = useBack(`/viagens/${id}?aba=gastos`)
-  const [otherShare, setOtherShare] = useState(false)
+  if (!isNew && s && !existing) return <p className="p-6">{synced ? 'Abrindo…' : 'Gasto não encontrado.'}</p>
   const seg = (on: boolean) => `rounded-lg border px-2 py-2.5 text-sm ${on ? 'border-ink bg-ink text-white' : 'border-line bg-paper'}`
   const chip = (on: boolean) => `rounded-full border px-3 py-1.5 text-sm ${on ? 'border-ink bg-ink text-white' : 'border-line bg-paper'}`
 

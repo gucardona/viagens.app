@@ -11,6 +11,7 @@ import { BackBar, SaveCancel, useBack } from '../components/FormBar'
 import { useExpenses } from './ExpensesTab'
 import { money } from '../money'
 import type { Attachment, Item, Kind, TripDetail } from '../types'
+import { knownIds } from '../outbox'
 
 type Form = Omit<Item, 'id' | 'trip_id' | 'created_at' | 'updated_at' | 'country_code' | 'area'>
 
@@ -60,6 +61,11 @@ export default function ItemSheet() {
   const links = mapLinks(form)
   const refresh = () => qc.invalidateQueries({ queryKey: ['trip', id] })
   const back = useBack(`/viagens/${id}`)
+  // An item created offline was just sent: move to its real id.
+  const synced = !item && Number(itemId) < 0 ? knownIds()[itemId] : undefined
+  useEffect(() => {
+    if (synced != null) nav(`/viagens/${id}/itens/${synced}`, { replace: true })
+  }, [synced, id, nav])
   const near = useMemo(() => {
     const pins = data?.items.filter((i) => i.lat != null) ?? []
     if (!pins.length) return undefined
@@ -107,7 +113,7 @@ export default function ItemSheet() {
     await refresh()
   }
 
-  if (!isNew && data && !item) return <p className="p-6">Item não encontrado.</p>
+  if (!isNew && data && !item) return <p className="p-6">{synced ? 'Abrindo…' : 'Item não encontrado.'}</p>
 
   return (
     <main className="mx-auto max-w-xl px-4 pb-24">
@@ -178,7 +184,8 @@ export default function ItemSheet() {
         <label className="block"><span className="mb-1 block text-sm text-muted">Notas</span>
           <textarea className="field" rows={3} value={form.notes} onChange={set('notes')} /></label>
 
-        {!isNew && (
+        {!isNew && Number(itemId) < 0 && <p className="text-sm text-muted">Dá para anexar documentos depois que o item for enviado (quando a internet voltar).</p>}
+        {!isNew && Number(itemId) > 0 && (
           <div>
             <span className="mb-1 block text-sm text-muted">Documentos</span>
             <ul className="space-y-1">
