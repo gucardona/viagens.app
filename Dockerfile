@@ -3,6 +3,8 @@ WORKDIR /src/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ ./
+# Map toggle (see frontend/src/mapStyle.ts): empty keeps OpenStreetMap.
+ARG VITE_MAP_PROVIDER VITE_GOOGLE_MAPS_KEY
 RUN npm run build
 
 FROM golang:1.26-alpine AS app

@@ -4,3 +4,4 @@ backend/web/dist/*
 backend/tmp/
 deploy/data/
 deploy/.env
+frontend/.env.local

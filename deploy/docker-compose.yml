@@ -1,6 +1,10 @@
 services:
   app:
-    build: ..
+    build:
+      context: ..
+      args: # read from deploy/.env; without them the map stays on OpenStreetMap
+        VITE_MAP_PROVIDER: ${VITE_MAP_PROVIDER:-osm}
+        VITE_GOOGLE_MAPS_KEY: ${VITE_GOOGLE_MAPS_KEY:-}
     restart: unless-stopped
     ports:
       - "127.0.0.1:8005:8080" # HTTPS comes from the host's Caddy (/etc/caddy/Caddyfile)
