@@ -17,7 +17,7 @@ Na viagem, uma aba nova **Chat** (Roteiro, Salvos, Mapa, Gastos, Chat, Mais).
 
 Por usuário, na coluna `users.anthropic_key`. `GET /api/assistant/key` devolve só `{set, hint}` (os 4 últimos caracteres); `PUT /api/assistant/key {key}` grava, e chave vazia apaga. A chave nunca volta para o navegador e uma conta não vê a da outra.
 
-`// shortcut: a chave fica em texto no banco (e no backup); cifrar se o banco sair da VPS.`
+A chave é cifrada no banco (AES-GCM) com uma chave gerada no primeiro início em `data/secret.key` (só o app lê). O backup copia só `backup.db` e `files/`, então um backup sozinho não revela as chaves. Restaurar em outro servidor sem o `secret.key` exige colar as chaves de novo. Chaves gravadas antes disso são cifradas quando o app sobe.
 
 ## Conversa
 

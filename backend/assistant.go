@@ -24,8 +24,13 @@ const (
 )
 
 func (a *App) handleGetAssistantKey(w http.ResponseWriter, r *http.Request) {
-	var key string
-	if err := a.db.QueryRow(`SELECT anthropic_key FROM users WHERE id = ?`, userID(r)).Scan(&key); err != nil {
+	var stored string
+	if err := a.db.QueryRow(`SELECT anthropic_key FROM users WHERE id = ?`, userID(r)).Scan(&stored); err != nil {
+		serverError(w, err)
+		return
+	}
+	key, err := a.openKey(stored)
+	if err != nil {
 		serverError(w, err)
 		return
 	}
@@ -36,7 +41,7 @@ func (a *App) handleGetAssistantKey(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, 200, map[string]any{"set": key != "", "hint": hint})
 }
 
-// shortcut: the key is stored in plain text in the database (and its backups); encrypt it if the database ever leaves the VPS.
+// The key is stored encrypted (see secret.go) and never sent back to the browser, only its last 4 characters.
 func (a *App) handlePutAssistantKey(w http.ResponseWriter, r *http.Request) {
 	var in struct{ Key string }
 	if !readJSON(w, r, &in) {
@@ -47,7 +52,7 @@ func (a *App) handlePutAssistantKey(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 400, "Chave inválida")
 		return
 	}
-	if _, err := a.db.Exec(`UPDATE users SET anthropic_key = ? WHERE id = ?`, in.Key, userID(r)); err != nil {
+	if _, err := a.db.Exec(`UPDATE users SET anthropic_key = ? WHERE id = ?`, a.sealKey(in.Key), userID(r)); err != nil {
 		serverError(w, err)
 		return
 	}
@@ -171,8 +176,13 @@ func (a *App) handleAssistant(api http.Handler) http.HandlerFunc {
 			messages = append(messages, map[string]string{"role": m.Role, "content": m.Text})
 		}
 
-		var key, me string
-		if err := a.db.QueryRow(`SELECT anthropic_key, name FROM users WHERE id = ?`, userID(r)).Scan(&key, &me); err != nil {
+		var stored, me string
+		if err := a.db.QueryRow(`SELECT anthropic_key, name FROM users WHERE id = ?`, userID(r)).Scan(&stored, &me); err != nil {
+			serverError(w, err)
+			return
+		}
+		key, err := a.openKey(stored)
+		if err != nil {
 			serverError(w, err)
 			return
 		}

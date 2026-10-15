@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -209,5 +211,32 @@ func TestAssistantBadKey(t *testing.T) {
 	res, got := chat(t, c, srv.URL, trip.ID, "oi")
 	if res.StatusCode != 502 || !strings.Contains(got.Error, "Chave") {
 		t.Fatalf("%d %+v", res.StatusCode, got)
+	}
+}
+
+func TestAssistantKeyIsEncryptedAtRest(t *testing.T) {
+	app, srv := newTestApp(t)
+	c := login(t, app, srv)
+	setKey(t, c, srv.URL, "sk-ant-api03-segredo-abcd")
+	var stored string
+	app.db.QueryRow(`SELECT anthropic_key FROM users`).Scan(&stored)
+	if strings.Contains(stored, "segredo") || !strings.HasPrefix(stored, "v1:") {
+		t.Fatalf("stored %q", stored)
+	}
+	// The encryption key lives beside the database, not in it, readable only by the app.
+	info, err := os.Stat(filepath.Join(app.dataDir, "secret.key"))
+	if err != nil || info.Mode().Perm() != 0o600 {
+		t.Fatalf("%v %v", info, err)
+	}
+	// A key saved before encryption is encrypted when the app starts.
+	app.db.Exec(`UPDATE users SET anthropic_key = 'sk-ant-antiga-wxyz'`)
+	again, err := newApp(app.dataDir, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer again.db.Close()
+	again.db.QueryRow(`SELECT anthropic_key FROM users`).Scan(&stored)
+	if key, err := again.openKey(stored); strings.Contains(stored, "antiga") || err != nil || key != "sk-ant-antiga-wxyz" {
+		t.Fatalf("stored %q key %q %v", stored, key, err)
 	}
 }

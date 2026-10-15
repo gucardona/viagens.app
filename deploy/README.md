@@ -69,6 +69,8 @@ O comando `backup` grava uma cópia consistente do banco mesmo com o app rodando
 0 3 * * * cd ~/gupa.dev/viagens.app/deploy && docker compose exec -T app /viagens backup /data/backup.db && rsync -a -e "ssh -p 23" data/backup.db data/files uXXXXX@uXXXXX.your-storagebox.de:viagens/
 ```
 
+O `data/secret.key` cifra as chaves da API do Claude e fica de fora do backup de propósito; sem ele, cada um cola a chave de novo no Chat.
+
 Para restaurar: pare o app (`docker compose stop app`), copie `backup.db` para `data/viagens.db`, devolva a pasta `files/` e suba de novo.
 
 ## 7. Mapa do Google (opcional)
