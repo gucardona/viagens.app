@@ -25,7 +25,7 @@ Por usuário, na coluna `users.anthropic_key`. `GET /api/assistant/key` devolve 
 
 - O histórico vai do aparelho como texto (até 40 mensagens de até 4000 caracteres). Cada pedido começa uma conversa nova na API só com o texto, sem blocos de raciocínio de pedidos anteriores.
   `// shortcut: o que as ferramentas leram em mensagens anteriores não volta; o assistente lê de novo se precisar.`
-- O servidor roda o laço de ferramentas (até 10 voltas) com `claude-opus-5-5`, esforço `medium`, `fallbacks: "default"` (outro modelo responde se o classificador recusar) e cache do prompt. Chamada direta por HTTP, sem SDK (biblioteca padrão antes de dependência).
+- O servidor roda o laço de ferramentas (até 10 voltas) com `claude-sonnet-5-5`, esforço `medium`, `fallbacks: "default"` (outro modelo responde se o classificador recusar) e cache do prompt. Chamada direta por HTTP, sem SDK (biblioteca padrão antes de dependência).
 - O prompt de sistema traz: data de hoje, a viagem, quem está falando, as duas contas (para "quem pagou") e a posição atual quando houver. Pede respostas curtas em português, em texto simples.
 - Erros da API viram mensagens em português: chave inválida (401), limite (429), indisponível (5xx/529), recusa.
 

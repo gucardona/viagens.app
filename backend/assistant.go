@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	assistantModel = "claude-opus-5-5"
+	assistantModel = "claude-sonnet-5-5"
 	maxToolRounds  = 10
 	maxReadBytes   = 10 << 20
 )
