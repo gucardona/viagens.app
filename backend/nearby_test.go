@@ -83,3 +83,16 @@ func TestNearbyUpstreamDown(t *testing.T) {
 		t.Fatalf("%d %v", res.StatusCode, body)
 	}
 }
+
+func TestNearbyAttractions(t *testing.T) {
+	app, srv := newTestApp(t)
+	c := login(t, app, srv)
+	_, query := fakeOverpass(t, app, 200, `{"elements":[{"type":"node","lat":40.414,"lon":-3.692,"tags":{"tourism":"museum","name":"Museo del Prado"}}]}`)
+	got := decode[[]Nearby](t, do(t, c, "GET", srv.URL+"/api/nearby?lat=40.41&lng=-3.70&what=attraction", nil))
+	if len(got) != 1 || got[0].Name != "Museo del Prado" || got[0].Kind != "museum" {
+		t.Fatalf("%+v", got)
+	}
+	if !strings.Contains(*query, "around:1500,40.41,-3.7") || !strings.Contains(*query, "museum") {
+		t.Fatalf("query %q", *query)
+	}
+}

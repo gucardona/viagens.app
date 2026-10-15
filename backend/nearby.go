@@ -28,6 +28,7 @@ type Nearby struct {
 var nearbyFilters = map[string]string{
 	"restaurant": `nwr(around:800,%s,%s)["amenity"~"^(restaurant|cafe|fast_food)$"]["name"];`,
 	"toilets":    `nwr(around:800,%s,%s)["amenity"="toilets"]["access"!~"^(private|no|customers)$"];`,
+	"attraction": `nwr(around:1500,%s,%s)["tourism"~"^(attraction|museum|gallery|viewpoint|zoo|aquarium|theme_park)$"]["name"];`,
 }
 
 // shortcut: entries are replaced but never evicted; a few KB per search is fine for two users, add eviction if memory grows.
@@ -103,8 +104,12 @@ func (a *App) handleNearby(w http.ResponseWriter, r *http.Request) {
 		if name == "" {
 			name = "Banheiro público"
 		}
+		kind := t["amenity"]
+		if kind == "" {
+			kind = t["tourism"]
+		}
 		out = append(out, Nearby{Name: name, Lat: pLat, Lng: pLng, Distance: int(math.Round(distanceM(lat, lng, pLat, pLng))),
-			Kind: t["amenity"], Cuisine: t["cuisine"], OpeningHours: t["opening_hours"], Fee: t["fee"], Wheelchair: t["wheelchair"]})
+			Kind: kind, Cuisine: t["cuisine"], OpeningHours: t["opening_hours"], Fee: t["fee"], Wheelchair: t["wheelchair"]})
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].Distance < out[j].Distance })
 	if len(out) > 40 {

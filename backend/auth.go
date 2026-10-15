@@ -37,6 +37,7 @@ type App struct {
 	ratesURL     string
 	photonURL    string
 	events       *hub
+	anthropicURL string
 }
 
 func newApp(dataDir string, cookieSecure bool) (*App, error) {
@@ -63,6 +64,7 @@ func newApp(dataDir string, cookieSecure bool) (*App, error) {
 		ratesURL:     "https://api.frankfurter.app",
 		photonURL:    "https://photon.komoot.io/api/",
 		events:       &hub{subs: map[chan struct{}]struct{}{}},
+		anthropicURL: "https://api.anthropic.com/v1/messages",
 	}, nil
 }
 
@@ -98,6 +100,9 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("POST /api/trips/{id}/checklist/copy", a.auth(a.handleCopyChecklist))
 	mux.HandleFunc("PUT /api/checklist/{id}", a.auth(a.handleUpdateChecklist))
 	mux.HandleFunc("DELETE /api/checklist/{id}", a.auth(a.handleDeleteChecklist))
+	mux.HandleFunc("GET /api/assistant/key", a.auth(a.handleGetAssistantKey))
+	mux.HandleFunc("PUT /api/assistant/key", a.auth(a.handlePutAssistantKey))
+	mux.HandleFunc("POST /api/trips/{id}/assistant", a.auth(a.handleAssistant(mux)))
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) { writeError(w, 404, "Não encontrado") })
 	dist, _ := fs.Sub(webFS, "web/dist")
 	mux.Handle("/", spaHandler(dist))
