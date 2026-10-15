@@ -54,7 +54,7 @@ export default function ExpensesTab({ data }: { data: TripDetail }) {
                   <li key={e.id}>
                     <Link to={`/viagens/${data.trip.id}/gastos/${e.id}`} className="flex justify-between gap-3 rounded-lg bg-paper p-3">
                       <span className="min-w-0">
-                        <span className="block truncate font-semibold">{CATEGORIES[e.category].emoji} {e.title}</span>
+                        <span className="block truncate font-semibold">{CATEGORIES[e.category].emoji} {e.title}{(e as { pending?: boolean }).pending && <span className="ml-1 text-xs font-normal text-muted">⏳ esperando internet</span>}</span>
                         <span className="block text-sm text-muted">
                           {name(e.paid_by)} pagou{e.payer_share === 100 ? ' · sem dividir' : e.payer_share !== 50 ? ` · ${e.payer_share}% de quem pagou` : ''}
                         </span>

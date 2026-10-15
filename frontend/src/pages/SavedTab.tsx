@@ -33,7 +33,7 @@ function Place({ i, tripId, color }: { i: Item; tripId: number; color: string })
       <Link to={`/viagens/${tripId}/itens/${i.id}`} className="flex gap-3 rounded-lg bg-paper p-3" style={{ borderLeft: `4px solid ${color}` }}>
         <span aria-hidden>{KINDS[i.kind].emoji}</span>
         <span className="min-w-0">
-          <span className="block truncate font-semibold">{i.title}</span>
+          <span className="block truncate font-semibold">{i.title}{(i as { pending?: boolean }).pending && <span className="ml-1 text-xs font-normal text-muted">⏳ esperando internet</span>}</span>
           {(i.area || i.notes) && <span className="block truncate text-sm text-muted">{i.area || i.notes}</span>}
         </span>
       </Link>

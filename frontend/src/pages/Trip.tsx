@@ -54,7 +54,7 @@ function Day({ day, tripId }: { day: DayGroup; tripId: string }) {
                   <span className="min-w-0 flex-1">
                     <span className="block font-semibold">
                       <span aria-hidden>{KINDS[i.kind].emoji} </span>
-                      {checkout ? `Check-out: ${i.title}` : i.title}
+                      {checkout ? `Check-out: ${i.title}` : i.title}{(i as { pending?: boolean }).pending && <span className="ml-1 text-xs font-normal text-muted">⏳ esperando internet</span>}
                     </span>
                     {until && <span className="board block text-ink">até {until}</span>}
                     {i.address && <span className="block truncate text-sm text-muted">{i.address}</span>}
