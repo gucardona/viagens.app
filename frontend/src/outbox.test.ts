@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { classify, overlay, queue, flush, type Op } from './outbox'
+import { classify, overlay, queue, flush, reconcile, type Op } from './outbox'
 
 const item = (id: number, title: string) => ({ id, trip_id: 1, title, kind: 'activity' })
 
@@ -22,24 +22,30 @@ describe('classify', () => {
 describe('queue', () => {
   it('gives creates a temporary negative id', () => {
     const { ops, result } = queue([], { kind: 'item', action: 'create', tripId: 1 }, { title: 'Museu' }, '/api/trips/1/items', 'POST')
-    expect(result).toMatchObject({ id: -1, trip_id: 1, title: 'Museu', pending: true })
+    expect(result).toMatchObject({ trip_id: 1, title: 'Museu', pending: true })
+    expect(result!.id).toBeLessThan(0)
     expect(ops).toHaveLength(1)
     const next = queue(ops, { kind: 'item', action: 'create', tripId: 1 }, { title: 'Bar' }, '/api/trips/1/items', 'POST')
-    expect(next.result?.id).toBe(-2)
+    expect(next.result!.id).toBeLessThan(result!.id)
   })
   it('folds edits and deletes of something created offline into the create', () => {
-    let { ops } = queue([], { kind: 'item', action: 'create', tripId: 1 }, { title: 'Museu' }, '/api/trips/1/items', 'POST')
-    ops = queue(ops, { kind: 'item', action: 'update', id: -1 }, { title: 'Museu do Fado' }, '/api/items/-1', 'PUT').ops
+    let { ops, result } = queue([], { kind: 'item', action: 'create', tripId: 1 }, { title: 'Museu' }, '/api/trips/1/items', 'POST')
+    const t = result!.id
+    ops = queue(ops, { kind: 'item', action: 'update', id: t }, { title: 'Museu do Fado' }, `/api/items/${t}`, 'PUT').ops
     expect(ops).toHaveLength(1)
     expect(ops[0].body).toEqual({ title: 'Museu do Fado' })
-    ops = queue(ops, { kind: 'item', action: 'delete', id: -1 }, undefined, '/api/items/-1', 'DELETE').ops
+    ops = queue(ops, { kind: 'item', action: 'delete', id: t }, undefined, `/api/items/${t}`, 'DELETE').ops
     expect(ops).toEqual([])
+  })
+  it('sends edits of something already created to its real id', () => {
+    const { ops } = queue([], { kind: 'item', action: 'update', id: -5 }, { title: 'X' }, '/api/items/-5', 'PUT', { '-5': 42 })
+    expect(ops).toEqual([expect.objectContaining({ action: 'update', id: 42, path: '/api/items/42', body: { title: 'X' } })])
   })
 })
 
 describe('overlay', () => {
   const ops: Op[] = [
-    { kind: 'item', action: 'create', tripId: 1, id: -1, method: 'POST', path: '/api/trips/1/items', body: { title: 'Novo' } },
+    { kind: 'item', action: 'create', tripId: 1, id: -1, seq: 1, method: 'POST', path: '/api/trips/1/items', body: { title: 'Novo' } },
     { kind: 'item', action: 'create', tripId: 2, id: -2, method: 'POST', path: '/api/trips/2/items', body: { title: 'Outra viagem' } },
     { kind: 'item', action: 'update', id: 10, method: 'PUT', path: '/api/items/10', body: { title: 'Editado' } },
     { kind: 'item', action: 'delete', id: 11, method: 'DELETE', path: '/api/items/11' },
@@ -68,7 +74,7 @@ describe('flush', () => {
   const res = (status: number, body: unknown) => new Response(JSON.stringify(body), { status })
   it('sends in order, swaps temporary ids, and drops what the server refuses', async () => {
     const ops: Op[] = [
-      { kind: 'item', action: 'create', tripId: 1, id: -1, method: 'POST', path: '/api/trips/1/items', body: { title: 'Novo' } },
+      { kind: 'item', action: 'create', tripId: 1, id: -1, seq: 1, method: 'POST', path: '/api/trips/1/items', body: { title: 'Novo' } },
       { kind: 'expense', action: 'create', tripId: 1, id: -2, method: 'POST', path: '/api/trips/1/expenses', body: { title: 'Ingresso', item_id: -1 } },
       { kind: 'item', action: 'delete', id: 99, method: 'DELETE', path: '/api/items/99' },
     ]
@@ -92,5 +98,35 @@ describe('flush', () => {
     const out = await flush(ops, async () => { throw new TypeError('Failed to fetch') })
     expect(out.remaining).toEqual(ops)
     expect(out.errors).toEqual([])
+  })
+})
+
+describe('flush across reconnects', () => {
+  it('keeps the link to an item created in an earlier flush', async () => {
+    const ops: Op[] = [{ kind: 'expense', action: 'create', tripId: 1, id: -9, seq: 1, method: 'POST', path: '/api/trips/1/expenses', body: { item_id: -3 } }]
+    let sent: unknown
+    await flush(ops, async (_p, init) => ((sent = JSON.parse(init.body as string)), new Response('{"id":5}', { status: 201 })), { '-3': 77 })
+    expect(sent).toEqual({ item_id: 77 })
+  })
+})
+
+describe('reconcile', () => {
+  const op = (seq: number, id: number, body: Record<string, unknown>): Op =>
+    ({ kind: 'item', action: 'create', tripId: 1, id, seq, method: 'POST', path: '/api/trips/1/items', body })
+  it('keeps writes made while sending and turns changes to sent creates into real writes', () => {
+    const A = op(1, -1, { title: 'A' }), B = op(2, -2, { title: 'B' })
+    const C = op(3, -3, { title: 'C' })
+    // while A and B were being sent: B deleted, C created, A edited
+    const current = [{ ...A, body: { title: 'A2' } }, C]
+    const next = reconcile([A, B], 2, current, { '-1': 10, '-2': 11 })
+    expect(next).toEqual([
+      expect.objectContaining({ action: 'update', id: 10, method: 'PUT', path: '/api/items/10', body: { title: 'A2' } }),
+      C,
+      expect.objectContaining({ action: 'delete', id: 11, method: 'DELETE', path: '/api/items/11' }),
+    ])
+  })
+  it('keeps what was not sent', () => {
+    const A = op(1, -1, { title: 'A' }), B = op(2, -2, { title: 'B' })
+    expect(reconcile([A, B], 1, [A, B], { '-1': 10 })).toEqual([B])
   })
 })
