@@ -31,7 +31,11 @@ func (a *App) checklist(w http.ResponseWriter, tripID int64) {
 }
 
 func (a *App) handleListChecklist(w http.ResponseWriter, r *http.Request) {
-	if id, ok := pathID(w, r); ok {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	if _, ok := a.getTrip(w, id); ok {
 		a.checklist(w, id)
 	}
 }

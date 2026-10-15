@@ -188,6 +188,10 @@ func (a *App) handleDownload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	f, err := os.Open(a.filePath(id))
+	if errors.Is(err, os.ErrNotExist) {
+		writeError(w, 404, "Arquivo não encontrado")
+		return
+	}
 	if err != nil {
 		serverError(w, err)
 		return

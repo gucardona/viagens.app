@@ -59,7 +59,7 @@ func (a *App) validateExpense(tripID int64, in *expenseInput) string {
 		return "Categoria inválida"
 	case *in.PayerShare < 0 || *in.PayerShare > 100:
 		return "Divisão inválida"
-	case in.Rate != nil && *in.Rate <= 0:
+	case in.Rate != nil && (*in.Rate <= 0 || *in.Rate > 100000):
 		return "Cotação inválida"
 	}
 	if _, ok := parseDate(in.Date); !ok {
@@ -240,7 +240,11 @@ func (a *App) handleListExpenses(w http.ResponseWriter, r *http.Request) {
 	for urows.Next() {
 		var id int64
 		var n string
-		urows.Scan(&id, &n)
+		if err := urows.Scan(&id, &n); err != nil {
+			urows.Close()
+			serverError(w, err)
+			return
+		}
 		ids, names = append(ids, id), append(names, n)
 	}
 	urows.Close()
