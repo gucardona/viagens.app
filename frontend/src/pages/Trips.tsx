@@ -14,10 +14,15 @@ export default function Trips() {
         <h1 className="board text-4xl font-bold text-ink">Viagens</h1>
         <Link to="/viagens/nova" className="btn">Nova viagem</Link>
       </header>
-      {countries.size > 0 && (
+      {!!trips?.length && (
         <p className="-mt-3 mb-5 text-muted">
-          <span className="board text-2xl font-bold text-ink">{countries.size}</span> {countries.size === 1 ? 'país' : 'países'}{' '}
-          <span aria-hidden>{[...countries].sort().map(flag).join(' ')}</span>
+          {countries.size > 0 && (
+            <>
+              <span className="board text-2xl font-bold text-ink">{countries.size}</span> {countries.size === 1 ? 'país' : 'países'}{' '}
+              <span aria-hidden>{[...countries].sort().map(flag).join(' ')}</span>{' '}
+            </>
+          )}
+          <Link to="/estatisticas" className="whitespace-nowrap font-semibold text-ink underline">Ver estatísticas ›</Link>
         </p>
       )}
       {error && <p role="alert" className="text-red-700">{error.message}</p>}

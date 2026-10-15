@@ -100,7 +100,21 @@ func scanItem(row interface{ Scan(...any) error }) (Item, error) {
 }
 
 func (a *App) listItems(tripID int64) ([]Item, error) {
-	rows, err := a.db.Query(`SELECT `+itemCols+` FROM items WHERE trip_id = ? ORDER BY id`, tripID)
+	return a.queryItems(`WHERE trip_id = ? ORDER BY id`, tripID)
+}
+
+// handlePins lists the pinned items of every trip, for the map of all trips.
+func (a *App) handlePins(w http.ResponseWriter, r *http.Request) {
+	items, err := a.queryItems(`WHERE lat IS NOT NULL ORDER BY trip_id, id`)
+	if err != nil {
+		serverError(w, err)
+		return
+	}
+	writeJSON(w, 200, items)
+}
+
+func (a *App) queryItems(where string, args ...any) ([]Item, error) {
+	rows, err := a.db.Query(`SELECT `+itemCols+` FROM items `+where, args...)
 	if err != nil {
 		return nil, err
 	}

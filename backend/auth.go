@@ -98,6 +98,7 @@ func (a *App) routes() http.Handler {
 	mux.HandleFunc("POST /api/trips/{id}/attachments", a.auth(a.handleUpload))
 	mux.HandleFunc("GET /api/attachments/{id}", a.auth(a.handleDownload))
 	mux.HandleFunc("DELETE /api/attachments/{id}", a.auth(a.handleDeleteAttachment))
+	mux.HandleFunc("GET /api/pins", a.auth(a.handlePins))
 	mux.HandleFunc("GET /api/geocode", a.auth(a.handleGeocode))
 	mux.HandleFunc("GET /api/nearby", a.auth(a.handleNearby))
 	mux.HandleFunc("POST /api/maps-link", a.auth(a.handleMapsLink))
