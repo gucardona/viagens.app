@@ -124,7 +124,7 @@ func TestAssistantAddsItem(t *testing.T) {
 	}
 
 	first, second := (*reqs)[0], (*reqs)[1]
-	if first["_key"] != "sk-ant-teste" || first["model"] != "claude-opus-5-5" {
+	if first["_key"] != "sk-ant-teste" || first["model"] != "claude-sonnet-5-5" {
 		t.Fatalf("%v %v", first["_key"], first["model"])
 	}
 	if sys := fmt.Sprint(first["system"]); !strings.Contains(sys, "40.41") || !strings.Contains(sys, trip.Name) || !strings.Contains(sys, "Ana") {
