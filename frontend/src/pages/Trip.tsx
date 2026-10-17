@@ -13,7 +13,7 @@ import MoreTab from './MoreTab'
 import OfflineBar from '../components/OfflineBar'
 import SavedTab from './SavedTab'
 import ChatTab from './ChatTab'
-import { navFor, type Bar, type View } from '../nav'
+import { addFor, navFor, type Bar, type View } from '../nav'
 
 const weekday = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', timeZone: 'UTC' })
 const month = new Intl.DateTimeFormat('pt-BR', { month: 'long', timeZone: 'UTC' })
@@ -29,7 +29,7 @@ export function DayHeader({ date }: { date: string | null }) {
   )
 }
 
-const ROW = 'flex gap-3 rounded-lg bg-paper p-3'
+const ROW = 'flex gap-3 px-4 py-3'
 
 const TICKET = {
   needed: { label: '🎫 comprar', className: 'bg-signal/40 text-ink' },
@@ -47,7 +47,7 @@ export function Day({ day, tripId }: { day: DayGroup; tripId?: string }) {
       {day.items.length === 0 ? (
         <p className="mt-2 text-sm text-muted">Nada planejado.</p>
       ) : (
-        <ul className="mt-3 space-y-2">
+        <ul className="mt-3 divide-y divide-line overflow-hidden rounded-lg bg-paper">
           {day.items.map((i) => {
             const checkout = day.date && i.kind === 'lodging' && day.date !== i.start_date
             const [start, until] = (day.date ? timeLabel(i, day.date) : '').split('–')
@@ -72,9 +72,9 @@ export function Day({ day, tripId }: { day: DayGroup; tripId?: string }) {
             return (
               <li key={`${i.id}-${day.date}`}>
                 {tripId ? (
-                  <Link to={`/viagens/${tripId}/itens/${i.id}`} className={ROW} style={{ borderLeft: `4px solid ${KINDS[i.kind].color}` }}>{row}</Link>
+                  <Link to={`/viagens/${tripId}/itens/${i.id}`} className={ROW}>{row}</Link>
                 ) : (
-                  <div className={ROW} style={{ borderLeft: `4px solid ${KINDS[i.kind].color}` }}>{row}</div>
+                  <div className={ROW}>{row}</div>
                 )}
               </li>
             )
@@ -115,6 +115,8 @@ const icon = (d: string) => (
   <svg aria-hidden viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
 )
 
+const ROUND = 'grid h-11 w-11 place-items-center rounded-full border border-line text-ink'
+
 const TABS: { key: Bar; label: string; icon: string }[] = [
   { key: 'roteiro', label: 'Roteiro', icon: 'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01' },
   { key: 'mapa', label: 'Mapa', icon: 'M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14' },
@@ -141,6 +143,7 @@ export default function Trip() {
   const [params, setParams] = useSearchParams()
   const { view: tab, bar } = navFor(params.get('aba'))
   const go = (aba: View) => setParams({ aba }, { replace: true })
+  const add = addFor(tab, id)
   const { data, error } = useQuery({ queryKey: ['trip', id], queryFn: () => api<TripDetail>(`/api/trips/${id}`) })
 
   const days = useMemo(() => (data ? buildDays(data.trip, data.items).filter((d) => d.date) : []), [data])
@@ -151,18 +154,16 @@ export default function Trip() {
 
   return (
     <div className={`mx-auto max-w-2xl px-4 ${tab === 'chat' ? 'pb-44' : 'pb-32'} pt-[max(1rem,env(safe-area-inset-top))]`}>
-      <header className="mb-2">
-        <div className="flex items-center justify-between">
-          <Link to="/" className="-ml-1 inline-flex min-h-11 items-center gap-1 pr-3 font-semibold text-ink"><span aria-hidden className="text-2xl leading-none">‹</span> Viagens</Link>
-          <button onClick={() => go('chat')} aria-pressed={tab === 'chat'}
-            className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 font-semibold ${tab === 'chat' ? 'bg-ink text-white' : 'bg-paper text-ink'}`}>
-            {icon('M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z')} Assistente
-          </button>
+      <header className="mb-4">
+        <div className="flex items-center justify-between gap-2">
+          <Link to="/" aria-label="Viagens" className={ROUND}>{icon('M15 5l-7 7 7 7')}</Link>
+          <div className="flex gap-2">
+            <button onClick={() => go('chat')} aria-pressed={tab === 'chat'} aria-label="Assistente"
+              className={`${ROUND} ${tab === 'chat' ? 'border-ink bg-ink text-white' : ''}`}>{icon('M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z')}</button>
+            <Link to={`/viagens/${id}/editar`} aria-label="Editar viagem" className={ROUND}>{icon('M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4')}</Link>
+          </div>
         </div>
-        <div className="mt-2 flex items-start justify-between gap-4">
-          <h1 className="board text-4xl font-bold leading-tight text-ink">{data.trip.name}</h1>
-          <Link to={`/viagens/${id}/editar`} className="btn btn-quiet shrink-0">Editar</Link>
-        </div>
+        <h1 className="board mt-3 text-4xl font-bold leading-tight text-ink">{data.trip.name}</h1>
         {(data.trip.destination || flags) && <p className="text-muted">{data.trip.destination} {flags && <span aria-label="Países">{flags}</span>}</p>}
       </header>
       <OfflineBar data={data} />
@@ -172,7 +173,7 @@ export default function Trip() {
       {tab === 'roteiro' && (
         <>
           <TicketsToBuy items={data.items} tripId={id} />
-          <div className="divide-y divide-line">
+          <div>
             {days.map((d) => <Day key={d.date ?? 'none'} day={d} tripId={id} />)}
           </div>
         </>
@@ -200,8 +201,8 @@ export default function Trip() {
               </button>
             ))}
           </div>
-          {tab === 'roteiro' && (
-            <Link to={`/viagens/${id}/itens/novo`} aria-label="Novo item"
+          {add && (
+            <Link to={add.to} aria-label={add.label}
               className="grid h-[3.6rem] w-[3.6rem] shrink-0 place-items-center rounded-full bg-ink text-white shadow-[0_8px_22px_rgba(18,53,91,0.35)]">
               <svg aria-hidden viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
             </Link>

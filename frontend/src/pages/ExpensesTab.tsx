@@ -19,22 +19,21 @@ export default function ExpensesTab({ data }: { data: TripDetail }) {
 
   return (
     <div className="mt-2">
-      <div className="rounded-lg bg-ink p-4 text-white">
-        <p className="text-sm opacity-80">Total da viagem</p>
-        <p className="board text-4xl font-bold">{money(s.total_cents)}</p>
-        <p className="mt-1">
-          {s.balance ? <>{s.balance.from} deve <b>{money(s.balance.cents)}</b> para {s.balance.to}</> : s.expenses.length ? 'Tudo certo entre vocês' : ''}
+      <div className="pt-2">
+        <p className="text-muted">Total da viagem</p>
+        <p className="board text-5xl font-bold leading-tight text-ink">{money(s.total_cents)}</p>
+        <p className="mt-1 text-muted">
+          {s.balance ? <>{s.balance.from} deve <b className="text-ink">{money(s.balance.cents)}</b> para {s.balance.to}</> : s.expenses.length ? 'Tudo certo entre vocês' : ''}
         </p>
-        {s.missing_rate > 0 && <p className="mt-1 text-sm text-signal">{s.missing_rate} gasto(s) sem cotação ficaram fora do total. Abra e informe a cotação.</p>}
+        {s.missing_rate > 0 && <p className="mt-1 text-sm text-red-700">{s.missing_rate} gasto(s) sem cotação ficaram fora do total. Abra e informe a cotação.</p>}
       </div>
 
-      <Link to={`/viagens/${data.trip.id}/gastos/novo`} className="btn mt-3 block text-center">+ Gasto</Link>
 
       {s.expenses.length === 0 ? (
-        <p className="mt-10 text-center text-muted">Nenhum gasto ainda.</p>
+        <p className="mt-10 text-center text-muted">Nenhum gasto ainda. Toque no + para registrar o primeiro.</p>
       ) : (
         <>
-          <ul className="mt-5 space-y-2">
+          <ul className="mt-6 space-y-3 rounded-lg bg-paper p-4">
             {(Object.keys(CATEGORIES) as Category[]).filter((c) => s.by_category[c]).map((c) => (
               <li key={c}>
                 <div className="flex justify-between text-sm"><span>{CATEGORIES[c].emoji} {CATEGORIES[c].label}</span><span className="board text-base">{money(s.by_category[c])}</span></div>
@@ -45,14 +44,14 @@ export default function ExpensesTab({ data }: { data: TripDetail }) {
 
           {days.map((d) => (
             <section key={d} className="mt-6">
-              <h3 className="flex justify-between border-b border-line pb-1">
+              <h3 className="flex justify-between pb-1">
                 <span className="board text-2xl font-bold text-ink">{shortDate(d)}</span>
                 <span className="board text-lg text-muted">{money(s.by_day[d] ?? 0)}</span>
               </h3>
-              <ul className="mt-2 space-y-1">
+              <ul className="mt-1 divide-y divide-line overflow-hidden rounded-lg bg-paper">
                 {s.expenses.filter((e) => e.date === d).map((e) => (
                   <li key={e.id}>
-                    <Link to={`/viagens/${data.trip.id}/gastos/${e.id}`} className="flex justify-between gap-3 rounded-lg bg-paper p-3">
+                    <Link to={`/viagens/${data.trip.id}/gastos/${e.id}`} className="flex justify-between gap-3 px-4 py-3">
                       <span className="min-w-0">
                         <span className="block truncate font-semibold">{CATEGORIES[e.category].emoji} {e.title}{(e as { pending?: boolean }).pending && <span className="ml-1 text-xs font-normal text-muted">⏳ esperando internet</span>}</span>
                         <span className="block text-sm text-muted">

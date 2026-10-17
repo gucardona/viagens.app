@@ -33,3 +33,15 @@ Reorganizar o conteúdo de Mais, mudar páginas de item ou gasto.
 - Cantos maiores no app todo, pelo tema: cartões e linhas 18px, botões e campos 12px.
 - O seletor "Dias | Salvos" segue o segmented do gastos.app: trilho cinza, opção ativa branca.
 - Cores e fontes do viagens continuam (azul `ink`, amarelo `signal`, Barlow).
+
+## Revisão: menos coisa na tela (também a partir do gastos.app)
+
+- Cabeçalho só com botões redondos de ícone: voltar à esquerda; Assistente e Editar à direita.
+- "Baixar para usar offline" sai do topo e vai para Mais › Usar sem internet. O topo só mostra aviso
+  quando está sem internet ou com alterações esperando.
+- Listas viram blocos brancos com linhas divididas (um bloco por dia), sem a borda colorida de cada item.
+- O + redondo cria o que faz sentido na tela: item no Dias, lugar no Salvos, gasto no Gastos.
+  Saem os botões "+ Lugar" e "+ Gasto".
+- Gastos: total grande sobre o fundo, sem a caixa azul.
+- Mais vira um índice de linhas (Checklist, Documentos, Compartilhar, Calendário, Usar sem internet);
+  cada uma abre a sua seção (`?aba=mais&secao=`). `?aba=documentos` abre direto em Documentos.

@@ -30,7 +30,8 @@ function mostCommon(values: string[]) {
 function Place({ i, tripId, color }: { i: Item; tripId: number; color: string }) {
   return (
     <li>
-      <Link to={`/viagens/${tripId}/itens/${i.id}`} className="flex gap-3 rounded-lg bg-paper p-3" style={{ borderLeft: `4px solid ${color}` }}>
+      <Link to={`/viagens/${tripId}/itens/${i.id}`} className="flex items-center gap-3 px-4 py-3">
+        <span aria-hidden className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: color }} />
         <span aria-hidden>{KINDS[i.kind].emoji}</span>
         <span className="min-w-0">
           <span className="block truncate font-semibold">{i.title}{(i as { pending?: boolean }).pending && <span className="ml-1 text-xs font-normal text-muted">⏳ esperando internet</span>}</span>
@@ -121,16 +122,15 @@ export default function SavedTab({ data }: { data: TripDetail }) {
 
   return (
     <div className="mt-2">
-      <div className="grid grid-cols-3 gap-2 text-sm">
-        <Link to={`/viagens/${data.trip.id}/itens/novo?salvo=1`} className="btn px-2">+ Lugar</Link>
-        <button type="button" className="btn btn-quiet px-2" onClick={pasteLink}>Colar link</button>
-        <button type="button" className="btn btn-quiet px-2" onClick={() => setImporting(true)}>Importar</button>
+      <div className="flex gap-2 text-sm">
+        <button type="button" className="min-h-10 rounded-full border border-line px-4 font-medium text-ink" onClick={pasteLink}>Colar link do Maps</button>
+        <button type="button" className="min-h-10 rounded-full border border-line px-4 font-medium text-ink" onClick={() => setImporting(true)}>Importar do Google</button>
       </div>
       {msg && <p role="status" className="mt-2 text-sm">{msg}</p>}
       {importing && <ImportDialog tripId={data.trip.id} onClose={() => setImporting(false)} />}
 
       {saved.length === 0 ? (
-        <p className="mt-10 text-center text-muted">Nenhum lugar salvo ainda. Itens sem data, importados do Google ou colados por link aparecem aqui.</p>
+        <p className="mt-10 text-center text-muted">Nenhum lugar salvo ainda. Toque no + para guardar uma ideia sem dia, ou traga lugares do Google Maps.</p>
       ) : (
         <>
           {pinned.length > 0 && <TripMap items={pinned} colors={colors} cluster className="mt-4 h-64" />}
@@ -149,20 +149,20 @@ export default function SavedTab({ data }: { data: TripDetail }) {
                 </h3>
                 <ToDay items={g} data={data} />
               </div>
-              <ul className="mt-2 space-y-1">{g.map((i) => <Place key={i.id} i={i} tripId={data.trip.id} color={PALETTE[k % PALETTE.length]} />)}</ul>
+              <ul className="mt-2 divide-y divide-line overflow-hidden rounded-lg bg-paper">{g.map((i) => <Place key={i.id} i={i} tripId={data.trip.id} color={PALETTE[k % PALETTE.length]} />)}</ul>
             </section>
           ))}
           {alone.length > 0 && (
             <section className="mt-5">
               <h3 className="font-semibold">Avulsos · {alone.length}</h3>
-              <ul className="mt-2 space-y-1">{alone.map((i) => <Place key={i.id} i={i} tripId={data.trip.id} color={ALONE} />)}</ul>
+              <ul className="mt-2 divide-y divide-line overflow-hidden rounded-lg bg-paper">{alone.map((i) => <Place key={i.id} i={i} tripId={data.trip.id} color={ALONE} />)}</ul>
             </section>
           )}
           {unpinned.length > 0 && (
             <section className="mt-5">
               <h3 className="font-semibold">Sem local · {unpinned.length}</h3>
               <p className="text-sm text-muted">Abra o lugar e toque no mapa para marcar onde ele fica.</p>
-              <ul className="mt-2 space-y-1">{unpinned.map((i) => <Place key={i.id} i={i} tripId={data.trip.id} color={ALONE} />)}</ul>
+              <ul className="mt-2 divide-y divide-line overflow-hidden rounded-lg bg-paper">{unpinned.map((i) => <Place key={i.id} i={i} tripId={data.trip.id} color={ALONE} />)}</ul>
             </section>
           )}
         </>
