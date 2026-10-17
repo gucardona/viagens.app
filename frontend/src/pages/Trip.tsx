@@ -125,10 +125,10 @@ const TABS: { key: Bar; label: string; icon: string }[] = [
 // Dias and Salvos are two views of the same plan: what has a day and what is still an idea.
 function PlanSwitch({ view, go }: { view: View; go: (aba: View) => void }) {
   return (
-    <div className="mt-4 mb-2 grid grid-cols-2 rounded-lg border border-line bg-paper p-1" role="group" aria-label="Ver roteiro">
+    <div className="mt-4 mb-2 grid grid-cols-2 rounded-md bg-ink/8 p-1" role="group" aria-label="Ver roteiro">
       {(['roteiro', 'salvos'] as const).map((v) => (
         <button key={v} onClick={() => go(v)} aria-pressed={view === v}
-          className={`board rounded-md py-1.5 text-lg font-semibold ${view === v ? 'bg-ink text-white' : 'text-muted'}`}>
+          className={`board min-h-10 rounded-[0.6rem] text-lg font-semibold ${view === v ? 'bg-paper text-ink shadow-sm' : 'text-muted'}`}>
           {v === 'roteiro' ? 'Dias' : 'Salvos'}
         </button>
       ))}
@@ -150,7 +150,7 @@ export default function Trip() {
   if (!data) return null
 
   return (
-    <div className="mx-auto max-w-2xl px-4 pb-32 pt-[max(1rem,env(safe-area-inset-top))]">
+    <div className={`mx-auto max-w-2xl px-4 ${tab === 'chat' ? 'pb-44' : 'pb-32'} pt-[max(1rem,env(safe-area-inset-top))]`}>
       <header className="mb-2">
         <div className="flex items-center justify-between">
           <Link to="/" className="-ml-1 inline-flex min-h-11 items-center gap-1 pr-3 font-semibold text-ink"><span aria-hidden className="text-2xl leading-none">‹</span> Viagens</Link>
@@ -184,23 +184,28 @@ export default function Trip() {
       {tab === 'chat' && <ChatTab tripId={data.trip.id} />}
       {tab === 'mais' && <MoreTab data={data} />}
 
-      {tab === 'roteiro' && (
-        <Link to={`/viagens/${id}/itens/novo`} className="btn fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-10 bg-signal text-ink shadow-lg">+ Item</Link>
-      )}
-
-      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-paper pb-[env(safe-area-inset-bottom)]">
-        <div className="mx-auto flex max-w-2xl">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => go(t.key)}
-              aria-current={bar === t.key ? 'page' : undefined}
-              className={`flex flex-1 flex-col items-center gap-0.5 pt-2 pb-1.5 ${bar === t.key ? 'text-ink shadow-[inset_0_3px_0_var(--color-signal)]' : 'text-muted'}`}
-            >
-              {icon(t.icon)}
-              <span className="board text-base font-semibold leading-none">{t.label}</span>
-            </button>
-          ))}
+      {/* Floating pill with the destinations and, apart from it, the round + (after gastos.app). */}
+      <nav className="fixed inset-x-0 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-20 px-3.5">
+        <div className="mx-auto flex max-w-2xl items-center gap-2.5">
+          <div className="flex h-[3.6rem] min-w-0 flex-1 items-center justify-around rounded-full bg-paper/90 px-1 shadow-[0_8px_28px_rgba(18,53,91,0.14),0_0_0_1px_rgba(18,53,91,0.06)] backdrop-blur-md">
+            {TABS.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => go(t.key)}
+                aria-current={bar === t.key ? 'page' : undefined}
+                className={`flex min-w-11 flex-1 flex-col items-center gap-0.5 rounded-full py-1 ${bar === t.key ? 'text-ink' : 'text-muted'}`}
+              >
+                <span className={`grid h-7 w-12 place-items-center rounded-full ${bar === t.key ? 'bg-signal/45' : ''}`}>{icon(t.icon)}</span>
+                <span className={`text-[0.7rem] leading-none ${bar === t.key ? 'font-semibold' : 'font-medium'}`}>{t.label}</span>
+              </button>
+            ))}
+          </div>
+          {tab === 'roteiro' && (
+            <Link to={`/viagens/${id}/itens/novo`} aria-label="Novo item"
+              className="grid h-[3.6rem] w-[3.6rem] shrink-0 place-items-center rounded-full bg-ink text-white shadow-[0_8px_22px_rgba(18,53,91,0.35)]">
+              <svg aria-hidden viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+            </Link>
+          )}
         </div>
       </nav>
     </div>

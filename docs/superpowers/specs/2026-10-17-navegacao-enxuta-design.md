@@ -19,9 +19,17 @@ No celular elas ficam apertadas, e nada diz o que é principal.
 ## Visual
 
 Mantém a identidade de painel de embarque: azul `ink`, amarelo `signal`, Barlow Condensed.
-O item ativo da barra fica aceso com a faixa amarela no topo e o ícone em `ink`; os outros em `muted`.
+O item ativo da barra fica em `ink` com destaque amarelo; os outros em `muted` (ver a revisão abaixo).
 Ícones são SVG em linha (traço de 2px), sem biblioteca nova.
 
 ## Fora do escopo
 
 Reorganizar o conteúdo de Mais, mudar páginas de item ou gasto.
+
+## Revisão: cantos arredondados (pedido do Gustavo, a partir do gastos.app)
+
+- A barra vira uma pílula flutuante (fundo branco translúcido, sombra suave) e o "+ Item"
+  vira um botão redondo ao lado dela, só no Roteiro. O item ativo ganha uma pílula amarela atrás do ícone.
+- Cantos maiores no app todo, pelo tema: cartões e linhas 18px, botões e campos 12px.
+- O seletor "Dias | Salvos" segue o segmented do gastos.app: trilho cinza, opção ativa branca.
+- Cores e fontes do viagens continuam (azul `ink`, amarelo `signal`, Barlow).
