@@ -1,9 +1,12 @@
 import Checklist from '../components/Checklist'
 import DocumentsTab from './DocumentsTab'
 import { useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
+import { OfflineSave } from '../components/OfflineBar'
+import { offlineInfo } from '../offline'
 import { api } from '../api'
-import type { Trip, TripDetail } from '../types'
+import type { CheckItem, Trip, TripDetail } from '../types'
 
 function ShareLink({ trip }: { trip: Trip }) {
   const qc = useQueryClient()
@@ -19,8 +22,7 @@ function ShareLink({ trip }: { trip: Trip }) {
   }
   return (
     <section>
-      <h2 className="board text-3xl font-bold text-ink">Compartilhar viagem</h2>
-      <p className="my-3 text-sm text-muted">
+      <p className="mb-3 text-sm text-muted">
         Quem tiver o link vê o roteiro e os mapas, sem login e sem poder mudar nada. Códigos de reserva, observações, documentos e gastos ficam de fora.
       </p>
       {url ? (
@@ -39,24 +41,66 @@ function ShareLink({ trip }: { trip: Trip }) {
   )
 }
 
-export default function MoreTab({ data }: { data: TripDetail }) {
+function Calendar({ trip }: { trip: Trip }) {
   return (
-    <div className="space-y-8">
-      <div className="mt-4"><Checklist tripId={data.trip.id} /></div>
-      <section>
-        <h2 className="board text-3xl font-bold text-ink">Documentos</h2>
-        <DocumentsTab data={data} />
-      </section>
-      <ShareLink trip={data.trip} />
-      <section>
-        <h2 className="board text-3xl font-bold text-ink">Calendário</h2>
-        <p className="my-3 text-sm text-muted">
-          Leva o roteiro para o calendário do celular. No iPhone, abra o arquivo e toque em “Adicionar tudo”; no Google Agenda, use Configurações › Importar.
-        </p>
-        <a className="btn btn-quiet inline-block" href={`/api/trips/${data.trip.id}/calendar.ics`} download>
-          Baixar para o calendário
-        </a>
-      </section>
-    </div>
+    <section>
+      <p className="mb-3 text-sm text-muted">
+        Leva o roteiro para o calendário do celular. No iPhone, abra o arquivo e toque em “Adicionar tudo”; no Google Agenda, use Configurações › Importar.
+      </p>
+      <a className="btn inline-block" href={`/api/trips/${trip.id}/calendar.ics`} download>Baixar para o calendário</a>
+    </section>
+  )
+}
+
+const SECTIONS = [
+  { key: 'checklist', emoji: '✅', label: 'Checklist' },
+  { key: 'documentos', emoji: '📄', label: 'Documentos' },
+  { key: 'compartilhar', emoji: '🔗', label: 'Compartilhar viagem' },
+  { key: 'calendario', emoji: '📅', label: 'Calendário' },
+  { key: 'offline', emoji: '📶', label: 'Usar sem internet' },
+] as const
+
+// An index of rows, after gastos.app's Ajustes; each row opens its section (?secao=).
+export default function MoreTab({ data }: { data: TripDetail }) {
+  const [params, setParams] = useSearchParams()
+  const secao = params.get('secao') ?? (params.get('aba') === 'documentos' ? 'documentos' : null)
+  const { data: list } = useQuery({ queryKey: ['checklist', String(data.trip.id)], queryFn: () => api<CheckItem[]>(`/api/trips/${data.trip.id}/checklist`) })
+  const open = SECTIONS.find((s) => s.key === secao)
+
+  if (open) {
+    return (
+      <div className="mt-2">
+        <button onClick={() => setParams({ aba: 'mais' }, { replace: true })} className="-ml-1 inline-flex min-h-11 items-center gap-1 pr-3 font-semibold text-ink">
+          <span aria-hidden className="text-2xl leading-none">‹</span> Mais
+        </button>
+        <h2 className="board mb-3 text-3xl font-bold text-ink">{open.label}</h2>
+        {open.key === 'checklist' && <Checklist tripId={data.trip.id} />}
+        {open.key === 'documentos' && <DocumentsTab data={data} />}
+        {open.key === 'compartilhar' && <ShareLink trip={data.trip} />}
+        {open.key === 'calendario' && <Calendar trip={data.trip} />}
+        {open.key === 'offline' && <OfflineSave data={data} />}
+      </div>
+    )
+  }
+
+  const value: Record<string, string> = {
+    checklist: list?.length ? `${list.filter((c) => c.done).length}/${list.length}` : '',
+    documentos: data.attachments.length ? String(data.attachments.length) : '',
+    compartilhar: data.trip.share_token ? 'Ligado' : '',
+    offline: offlineInfo(data.trip.id) ? 'Salvo' : '',
+  }
+  return (
+    <ul className="mt-2 divide-y divide-line overflow-hidden rounded-lg bg-paper">
+      {SECTIONS.map((s) => (
+        <li key={s.key}>
+          <button onClick={() => setParams({ aba: 'mais', secao: s.key }, { replace: true })} className="flex min-h-14 w-full items-center gap-3 px-4 text-left">
+            <span aria-hidden className="grid h-9 w-9 place-items-center rounded-[0.7rem] bg-sea text-lg">{s.emoji}</span>
+            <span className="flex-1 font-medium text-ink">{s.label}</span>
+            {value[s.key] && <span className="text-muted">{value[s.key]}</span>}
+            <span aria-hidden className="text-xl text-muted">›</span>
+          </button>
+        </li>
+      ))}
+    </ul>
   )
 }

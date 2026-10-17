@@ -32,10 +32,10 @@ export default function Checklist({ tripId }: { tripId: number }) {
 
   return (
     <section>
-      <h2 className="board text-3xl font-bold text-ink">Checklist {list?.length ? <span className="text-lg text-muted">{done}/{list.length}</span> : null}</h2>
-      <ul className="mt-2 space-y-1">
+      {list && list.length > 0 && <p className="text-sm text-muted">{done} de {list.length} prontos</p>}
+      <ul className="mt-2 divide-y divide-line overflow-hidden rounded-lg bg-paper empty:hidden">
         {list?.map((c) => (
-          <li key={c.id} className="flex items-center gap-3 rounded-lg bg-paper p-3">
+          <li key={c.id} className="flex items-center gap-3 px-4 py-3">
             <input type="checkbox" className="h-5 w-5 shrink-0" checked={c.done} aria-label={c.text}
               onChange={() => {
                 qc.setQueryData<CheckItem[]>(key, (l) => l?.map((x) => (x.id === c.id ? { ...x, done: !c.done } : x)))
@@ -46,7 +46,7 @@ export default function Checklist({ tripId }: { tripId: number }) {
           </li>
         ))}
       </ul>
-      <form onSubmit={add} className="mt-2 flex gap-2">
+      <form onSubmit={add} className="mt-3 flex gap-2">
         <input className="field" value={text} maxLength={200} onChange={(e) => setText(e.target.value)} placeholder="Passaporte, adaptador de tomada…" />
         <button className="btn shrink-0">Adicionar</button>
       </form>
