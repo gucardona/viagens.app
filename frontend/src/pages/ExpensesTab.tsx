@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api, shortDate } from '../api'
-import { CATEGORIES, money, type Category } from '../money'
+import { byCurrency, CATEGORIES, money, type Category } from '../money'
 import type { ExpenseSummary, TripDetail, User } from '../types'
 
 export const useExpenses = (tripId: number | string) =>
@@ -16,12 +16,16 @@ export default function ExpensesTab({ data }: { data: TripDetail }) {
   if (!s) return null
   const max = Math.max(1, ...Object.values(s.by_category))
   const days = [...new Set(s.expenses.map((e) => e.date))]
+  const perCurrency = byCurrency(s.expenses)
 
   return (
     <div className="mt-2">
       <div className="pt-2">
         <p className="text-muted">Total da viagem</p>
         <p className="board text-5xl font-bold leading-tight text-ink">{money(s.total_cents)}</p>
+        {perCurrency.some((c) => c.currency !== 'BRL') && (
+          <p className="board text-lg text-ink">{perCurrency.map((c) => money(c.cents, c.currency)).join(' + ')}</p>
+        )}
         <p className="mt-1 text-muted">
           {s.balance ? <>{s.balance.from} deve <b className="text-ink">{money(s.balance.cents)}</b> para {s.balance.to}</> : s.expenses.length ? 'Tudo certo entre vocês' : ''}
         </p>

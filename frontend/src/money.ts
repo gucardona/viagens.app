@@ -14,6 +14,14 @@ export const CATEGORIES: Record<Category, { label: string; emoji: string; color:
 export const money = (cents: number, currency = 'BRL') =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency }).format(cents / 100)
 
+// Trip totals in the currency each expense was paid in: real first, then alphabetical.
+export function byCurrency(expenses: { amount_cents: number; currency: string }[]) {
+  const sum = new Map<string, number>()
+  for (const e of expenses) sum.set(e.currency, (sum.get(e.currency) ?? 0) + e.amount_cents)
+  return [...sum].map(([currency, cents]) => ({ currency, cents }))
+    .sort((a, b) => (a.currency === 'BRL' ? -1 : b.currency === 'BRL' ? 1 : a.currency.localeCompare(b.currency)))
+}
+
 // "1.234,50" / "12.50" / "7" -> cents; null if not a positive amount.
 export function parseMoney(s: string): number | null {
   let t = s.trim().replace(/\s/g, '')
