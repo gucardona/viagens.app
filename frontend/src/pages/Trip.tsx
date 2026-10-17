@@ -13,6 +13,7 @@ import MoreTab from './MoreTab'
 import OfflineBar from '../components/OfflineBar'
 import SavedTab from './SavedTab'
 import ChatTab from './ChatTab'
+import { navFor, type Bar, type View } from '../nav'
 
 const weekday = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', timeZone: 'UTC' })
 const month = new Intl.DateTimeFormat('pt-BR', { month: 'long', timeZone: 'UTC' })
@@ -110,19 +111,36 @@ function TicketsToBuy({ items, tripId }: { items: Item[]; tripId: string }) {
   )
 }
 
-const TABS = [
-  { key: 'roteiro', label: 'Roteiro' },
-  { key: 'salvos', label: 'Salvos' },
-  { key: 'mapa', label: 'Mapa' },
-  { key: 'gastos', label: 'Gastos' },
-  { key: 'chat', label: 'Chat' },
-  { key: 'mais', label: 'Mais' },
-] as const
+const icon = (d: string) => (
+  <svg aria-hidden viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
+)
+
+const TABS: { key: Bar; label: string; icon: string }[] = [
+  { key: 'roteiro', label: 'Roteiro', icon: 'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01' },
+  { key: 'mapa', label: 'Mapa', icon: 'M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14' },
+  { key: 'gastos', label: 'Gastos', icon: 'M2 6h20v12H2zM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM6 12h.01M18 12h.01' },
+  { key: 'mais', label: 'Mais', icon: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z' },
+]
+
+// Dias and Salvos are two views of the same plan: what has a day and what is still an idea.
+function PlanSwitch({ view, go }: { view: View; go: (aba: View) => void }) {
+  return (
+    <div className="mt-4 mb-2 grid grid-cols-2 rounded-lg border border-line bg-paper p-1" role="group" aria-label="Ver roteiro">
+      {(['roteiro', 'salvos'] as const).map((v) => (
+        <button key={v} onClick={() => go(v)} aria-pressed={view === v}
+          className={`board rounded-md py-1.5 text-lg font-semibold ${view === v ? 'bg-ink text-white' : 'text-muted'}`}>
+          {v === 'roteiro' ? 'Dias' : 'Salvos'}
+        </button>
+      ))}
+    </div>
+  )
+}
 
 export default function Trip() {
   const { id = '' } = useParams()
   const [params, setParams] = useSearchParams()
-  const tab = params.get('aba') === 'documentos' ? 'mais' : params.get('aba') ?? 'roteiro'
+  const { view: tab, bar } = navFor(params.get('aba'))
+  const go = (aba: View) => setParams({ aba }, { replace: true })
   const { data, error } = useQuery({ queryKey: ['trip', id], queryFn: () => api<TripDetail>(`/api/trips/${id}`) })
 
   const days = useMemo(() => (data ? buildDays(data.trip, data.items).filter((d) => d.date) : []), [data])
@@ -134,7 +152,13 @@ export default function Trip() {
   return (
     <div className="mx-auto max-w-2xl px-4 pb-32 pt-[max(1rem,env(safe-area-inset-top))]">
       <header className="mb-2">
-        <Link to="/" className="-ml-1 inline-flex min-h-11 items-center gap-1 pr-3 font-semibold text-ink"><span aria-hidden className="text-2xl leading-none">‹</span> Viagens</Link>
+        <div className="flex items-center justify-between">
+          <Link to="/" className="-ml-1 inline-flex min-h-11 items-center gap-1 pr-3 font-semibold text-ink"><span aria-hidden className="text-2xl leading-none">‹</span> Viagens</Link>
+          <button onClick={() => go('chat')} aria-pressed={tab === 'chat'}
+            className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 font-semibold ${tab === 'chat' ? 'bg-ink text-white' : 'bg-paper text-ink'}`}>
+            {icon('M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z')} Assistente
+          </button>
+        </div>
         <div className="mt-2 flex items-start justify-between gap-4">
           <h1 className="board text-4xl font-bold leading-tight text-ink">{data.trip.name}</h1>
           <Link to={`/viagens/${id}/editar`} className="btn btn-quiet shrink-0">Editar</Link>
@@ -142,6 +166,8 @@ export default function Trip() {
         {(data.trip.destination || flags) && <p className="text-muted">{data.trip.destination} {flags && <span aria-label="Países">{flags}</span>}</p>}
       </header>
       <OfflineBar data={data} />
+
+      {bar === 'roteiro' && <PlanSwitch view={tab} go={go} />}
 
       {tab === 'roteiro' && (
         <>
@@ -162,17 +188,20 @@ export default function Trip() {
         <Link to={`/viagens/${id}/itens/novo`} className="btn fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-10 bg-signal text-ink shadow-lg">+ Item</Link>
       )}
 
-      <nav className="fixed inset-x-0 bottom-0 z-20 flex border-t border-line bg-paper pb-[env(safe-area-inset-bottom)]">
-        {TABS.map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setParams({ aba: t.key }, { replace: true })}
-            aria-current={tab === t.key ? 'page' : undefined}
-            className={`flex-1 py-3 font-semibold ${tab === t.key ? 'text-ink shadow-[inset_0_3px_0_var(--color-signal)]' : 'text-muted'}`}
-          >
-            {t.label}
-          </button>
-        ))}
+      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-paper pb-[env(safe-area-inset-bottom)]">
+        <div className="mx-auto flex max-w-2xl">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => go(t.key)}
+              aria-current={bar === t.key ? 'page' : undefined}
+              className={`flex flex-1 flex-col items-center gap-0.5 pt-2 pb-1.5 ${bar === t.key ? 'text-ink shadow-[inset_0_3px_0_var(--color-signal)]' : 'text-muted'}`}
+            >
+              {icon(t.icon)}
+              <span className="board text-base font-semibold leading-none">{t.label}</span>
+            </button>
+          ))}
+        </div>
       </nav>
     </div>
   )
