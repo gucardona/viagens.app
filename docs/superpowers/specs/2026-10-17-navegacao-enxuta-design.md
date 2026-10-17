@@ -10,7 +10,7 @@ No celular elas ficam apertadas, e nada diz o que é principal.
 - Barra inferior com quatro destinos, cada um com ícone e rótulo: **Roteiro, Mapa, Gastos, Mais**.
 - **Salvos** vira a segunda vista do Roteiro: um seletor "Dias | Salvos" no topo do roteiro.
   São as ideias ainda sem dia, então moram junto do roteiro.
-- **Assistente** (o antigo Chat) sai da barra e vira um botão no cabeçalho, ao lado de "‹ Viagens".
+- **Assistente** (o antigo Chat) sai da barra e vira um botão no cabeçalho (depois voltou para a barra; ver a última revisão).
   Continua a um toque de qualquer aba.
 - **Mais** continua igual por dentro (checklist, documentos, compartilhar, calendário).
 - Os endereços antigos continuam valendo: `?aba=salvos`, `?aba=chat` e `?aba=documentos`
@@ -45,3 +45,9 @@ Reorganizar o conteúdo de Mais, mudar páginas de item ou gasto.
 - Gastos: total grande sobre o fundo, sem a caixa azul.
 - Mais vira um índice de linhas (Checklist, Documentos, Compartilhar, Calendário, Usar sem internet);
   cada uma abre a sua seção (`?aba=mais&secao=`). `?aba=documentos` abre direto em Documentos.
+
+## Revisão: Editar e Assistente
+
+- Editar sai do canto e fica ao lado do nome da viagem, como um botão redondo pequeno.
+- O Assistente entra na barra de baixo, no meio (Roteiro, Mapa, Assistente, Gastos, Mais),
+  para ficar sempre à mão durante o scroll. O topo fica só com o voltar.
