@@ -120,6 +120,7 @@ const ROUND = 'grid h-11 w-11 place-items-center rounded-full border border-line
 const TABS: { key: Bar; label: string; icon: string }[] = [
   { key: 'roteiro', label: 'Roteiro', icon: 'M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01' },
   { key: 'mapa', label: 'Mapa', icon: 'M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14' },
+  { key: 'chat', label: 'Assistente', icon: 'M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z' },
   { key: 'gastos', label: 'Gastos', icon: 'M2 6h20v12H2zM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM6 12h.01M18 12h.01' },
   { key: 'mais', label: 'Mais', icon: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z' },
 ]
@@ -155,15 +156,11 @@ export default function Trip() {
   return (
     <div className={`mx-auto max-w-2xl px-4 ${tab === 'chat' ? 'pb-44' : 'pb-32'} pt-[max(1rem,env(safe-area-inset-top))]`}>
       <header className="mb-4">
-        <div className="flex items-center justify-between gap-2">
-          <Link to="/" aria-label="Viagens" className={ROUND}>{icon('M15 5l-7 7 7 7')}</Link>
-          <div className="flex gap-2">
-            <button onClick={() => go('chat')} aria-pressed={tab === 'chat'} aria-label="Assistente"
-              className={`${ROUND} ${tab === 'chat' ? 'border-ink bg-ink text-white' : ''}`}>{icon('M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z')}</button>
-            <Link to={`/viagens/${id}/editar`} aria-label="Editar viagem" className={ROUND}>{icon('M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4')}</Link>
-          </div>
+        <Link to="/" aria-label="Viagens" className={ROUND}>{icon('M15 5l-7 7 7 7')}</Link>
+        <div className="mt-3 flex items-center gap-2">
+          <h1 className="board min-w-0 text-4xl font-bold leading-tight text-ink">{data.trip.name}</h1>
+          <Link to={`/viagens/${id}/editar`} aria-label="Editar viagem" className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-line text-muted">{icon('M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4')}</Link>
         </div>
-        <h1 className="board mt-3 text-4xl font-bold leading-tight text-ink">{data.trip.name}</h1>
         {(data.trip.destination || flags) && <p className="text-muted">{data.trip.destination} {flags && <span aria-label="Países">{flags}</span>}</p>}
       </header>
       <OfflineBar data={data} />
