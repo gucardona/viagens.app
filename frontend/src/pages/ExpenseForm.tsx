@@ -8,7 +8,7 @@ import { BackBar, SaveCancel, useBack } from '../components/FormBar'
 import { knownIds } from '../outbox'
 import type { Expense, TripDetail } from '../types'
 
-const CURRENCIES = ['BRL', 'EUR', 'USD', 'GBP', 'CHF', 'JPY', 'ARS', 'CLP', 'MXN', 'CAD', 'AUD']
+const CURRENCIES = ['BRL', 'EUR', 'USD', 'GBP', 'CHF', 'JPY', 'ARS', 'CLP', 'UYU', 'COP', 'PEN', 'MXN', 'CAD', 'AUD', 'CZK', 'HUF', 'PLN', 'DKK', 'SEK', 'NOK', 'TRY', 'CNY']
 const SPLITS = [{ v: 50, label: 'Metade' }, { v: 100, label: 'Quem pagou' }]
 const today = () => new Date().toLocaleDateString('sv')
 
@@ -72,6 +72,7 @@ export default function ExpenseForm() {
     setError('')
     const cents = parseMoney(amount)
     if (cents == null) return setError('Digite um valor, por exemplo 12,50')
+    if (!/^[A-Z]{3}$/.test(currency)) return setError('Moeda com três letras, por exemplo EUR')
     const r = rate.trim() ? Number(rate.replace(',', '.')) : null
     const body = { item_id: itemId, title, amount_cents: cents, currency, category, paid_by: paidBy, payer_share: share, date, rate: r }
     try {
@@ -102,9 +103,9 @@ export default function ExpenseForm() {
           <label className="block flex-1"><span className="mb-1 block text-sm text-muted">Valor</span>
             <input className="field board text-2xl" inputMode="decimal" required value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0,00" /></label>
           <label className="block w-28"><span className="mb-1 block text-sm text-muted">Moeda</span>
-            <select className="field" value={currency} onChange={(e) => setCurrency(e.target.value)}>
-              {[...new Set([currency, ...CURRENCIES])].map((c) => <option key={c}>{c}</option>)}
-            </select></label>
+            <input className="field uppercase" list="moedas" required maxLength={3} autoCapitalize="characters" value={currency}
+              onChange={(e) => setCurrency(e.target.value.toUpperCase().trim())} onFocus={(e) => e.target.select()} />
+            <datalist id="moedas">{CURRENCIES.map((c) => <option key={c} value={c} />)}</datalist></label>
         </div>
         <label className="block"><span className="mb-1 block text-sm text-muted">Descrição</span>
           <input className="field" required maxLength={200} value={title} onChange={(e) => setTitle(e.target.value)} /></label>
